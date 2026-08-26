@@ -113,8 +113,11 @@ return {
     }
 
     const FONT_CSS = "@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap');"
+    // Density probe v3: no global letter-spacing and no text-rendering on
+    // body — both desync the textarea caret in the prompt editor (human
+    // report 2026-08-26). Antialiasing, motion, and the cobalt focus ring stay.
     const COCKPIT_CSS = [
-      'body { letter-spacing: -0.005em; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }',
+      'body { -webkit-font-smoothing: antialiased; }',
       ':root { --ds-transition-duration: 0.13s; --ds-transition-duration-fast: 0.09s; --ow-proto-focus: #2E62D6; }',
       'body[data-ds-dark-theme] { --ow-proto-focus: #8CAAF2; }',
       ':focus-visible { outline: 2px solid var(--ow-proto-focus); outline-offset: 1px; }',
@@ -124,7 +127,7 @@ return {
       { id: 'base', short: 'DSH', hint: 'Текущий DSH без переопределений — база для сравнения' },
       { id: 'foundation', short: 'фундамент', hint: 'Заблокированный маппинг dsh-ood.4: цинковая рампа, один Cobalt, статусы-квады, нейтральный баббл' },
       { id: 'geist', short: '+Geist', hint: 'Фундамент + Geist и Geist Mono (CDN; в продакшене — self-hosted woff2)' },
-      { id: 'cockpit', short: '+плотность', hint: 'Geist + зонд плотности: трекинг, сглаживание, motion 130ms, кобальтовый focus-ring' },
+      { id: 'cockpit', short: '+плотность', hint: 'Geist + зонд плотности v3 (без трекинга/text-rendering — фикс каретки): сглаживание, motion 130ms, кобальтовый focus-ring' },
     ]
 
     let undoLayer = () => {}
@@ -189,11 +192,11 @@ return {
       {
         name: 'shell.overlay',
         id: 'ow-proto-bar',
-        inject: () => ({ variants: VARIANTS, initial: 'foundation', onSelect: applyVariant }),
+        inject: () => ({ variants: VARIANTS, initial: 'cockpit', onSelect: applyVariant }),
       },
       OwBar,
     ))
 
-    applyVariant('foundation')
+    applyVariant('cockpit')
   },
 }

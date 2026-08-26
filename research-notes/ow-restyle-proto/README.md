@@ -6,7 +6,8 @@ OW-to-DSH token mapping (dsh-ood.4)?
 
 ## Shape
 
-Dynamic Cordis client plugin (runtime `owsty-1/pkg-2`), run live against the
+Dynamic Cordis client plugin (runtime `owsty-1/pkg-2`, density probe fixed
+in `pkg-3`), run live against the
 web GUI — no rebuild. A floating pill bar (registered in the `shell.overlay`
 list slot as `ow-proto-bar`) switches between four cumulative variants:
 
@@ -18,8 +19,12 @@ list slot as `ow-proto-bar`) switches between four cumulative variants:
 3. `+Geist` — foundation plus Geist / Geist Mono font variables. Fonts arrive
    via a Google Fonts CDN `@import` (prototype only; the production port
    self-hosts woff2 per the dsh-ood.3 findings, KaTeX precedent).
-4. `+плотность` — Geist plus a density probe: letter-spacing `-0.005em`,
-   antialiasing, motion durations 130/90 ms, cobalt focus ring.
+4. `+плотность` — Geist plus a density probe: antialiasing, motion durations
+   130/90 ms, cobalt focus ring. Probe v3 (pkg-3) removed the first run's
+   global `letter-spacing: -0.005em` and `text-rendering:
+   optimizeLegibility` — they desynced the prompt-editor caret ~one character
+   ahead of typed text (human report). Rollout rule: never apply
+   letter-spacing or text-rendering to editable surfaces.
 
 Every token override is a `{ light, dark }` pair, so the stock theme switcher
 evaluates both palettes live.
