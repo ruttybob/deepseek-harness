@@ -3,11 +3,11 @@
      Single self-contained file: real .beads/ data + real --dsw-* tokens embedded.
      Three structurally different variants, switchable via the bottom bar or ←/→.
      Build: node prototype/build.mjs regenerates bd-panel-ux.html from this template. -->
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Beads 面板原型 · dsh-01e.4</title>
+<title>Beads Panel Prototype · dsh-01e.4</title>
 <style>
 /* __THEME_CSS__ */
 /* __BASE_CSS__ */
@@ -121,7 +121,7 @@ body {
 .skelRow { height: 52px; border-radius: 9px; margin-bottom: 10px; background: var(--dsw-alias-bg-skeleton); animation: skelPulse 1.2s ease-in-out infinite; }
 @keyframes skelPulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 
-/* ============ variant A: 双栏工作台 ============ */
+/* ============ variant A: two-pane workbench ============ */
 .vaRoot { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .vaBody { display: flex; flex: 1; min-height: 0; }
 .vaList { width: 430px; flex: none; border-right: 1px solid var(--dsw-alias-border-l2); overflow-y: auto; padding: 4px 0 24px; }
@@ -203,7 +203,7 @@ body {
 .legend div { display: flex; align-items: center; gap: 7px; }
 .graphHint { position: absolute; right: 12px; top: 10px; font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); }
 
-/* ============ variant B: 画布优先 ============ */
+/* ============ variant B: canvas-first ============ */
 .vbRoot { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .vbCanvas { flex: 1; min-height: 0; position: relative; }
 .vbQueue { flex: none; border-top: 1px solid var(--dsw-alias-border-l2); padding: 8px 16px 10px; display: flex; align-items: center; gap: 8px; overflow-x: auto; }
@@ -222,7 +222,7 @@ body {
 }
 .vbDetailClose { position: absolute; top: 10px; right: 10px; }
 
-/* ============ variant C: 泳道看板 ============ */
+/* ============ variant C: swimlane board ============ */
 .vcRoot { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .vcBoard { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); overflow-x: auto; }
 .vcCol { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--dsw-alias-border-l1); }
@@ -296,7 +296,7 @@ function bucketOf(i) {
   const bs = blockersOf(i.id)
   return bs.some(b => !isClosed(byId.get(b))) ? 'blocked' : 'frontier'
 }
-const BUCKET_ZH = { frontier: '可认领', progress: '进行中', blocked: '已阻塞', closed: '已完成' }
+const BUCKET_LABEL = { frontier: 'Frontier', progress: 'In progress', blocked: 'Blocked', closed: 'Done' }
 const looseIssues = ISSUES.filter(i => !i.parent && !MAPS.some(m => m.id === i.id))
 function mapTickets(mid) { return childrenOf(mid) }
 function fmtDate(iso) { return (iso || '').slice(0, 10) }
@@ -358,7 +358,7 @@ const S = {
   loadedComments: new Set(),
   q: '',
 }
-const VARIANT_NAMES = { A: '双栏工作台 · list-first', B: '画布优先 · graph-first', C: '泳道看板 · board' }
+const VARIANT_NAMES = { A: 'Workbench · list-first', B: 'Canvas · graph-first', C: 'Board · swimlanes' }
 const app = document.getElementById('app')
 let vaListEl = null // search refreshes only the A list, keeping input focus
 function render() {
@@ -373,25 +373,25 @@ function renderShell() {
   const beadsAvailable = S.dataState !== 'nobeads'
   if (!beadsAvailable && S.tab === 'beads') S.tab = 'chat' // auto-return (dsh-01e.3)
   const tabs = [
-    { id: 'chat', label: '对话' },
-    { id: 'trajectory', label: '轨迹' },
+    { id: 'chat', label: 'Chat' },
+    { id: 'trajectory', label: 'Trajectory' },
     { id: 'beads', label: 'Beads', disabled: !beadsAvailable },
   ]
   const header = h('div', { class: 'shellHeader' },
-    h('div', { class: 'shellCrumb' }, 'deepseek-harness · 会话 dsh-01e.4'),
+    h('div', { class: 'shellCrumb' }, 'deepseek-harness · session dsh-01e.4'),
     h('div', { class: 'tabs' }, tabs.map(t => {
       const btn = h('button', {
         class: 'tab' + (S.tab === t.id ? ' tabActive' : '') + (t.disabled ? ' tabDisabled' : ''),
         onClick: () => { if (!t.disabled) { S.tab = t.id; render() } },
       }, t.label)
-      if (t.disabled) btn.append(h('span', { class: 'tabTip' }, '此会话仓库没有 .beads/ 任务库'))
+      if (t.disabled) btn.append(h('span', { class: 'tabTip' }, 'No .beads/ store in this session repo'))
       return btn
     })))
   const view = h('div', { class: 'viewArea' })
   if (S.tab !== 'beads') {
     view.append(h('div', { class: 'stateWrap' },
-      h('div', { class: 'big' }, S.tab === 'chat' ? '对话视图（真实 GUI 中为聊天记录）' : '轨迹视图（真实 GUI 中为调用轨迹）'),
-      h('div', { class: 'hint' }, '本原型只研究 Beads 标签页 — 点击上方「Beads」进入。')))
+      h('div', { class: 'big' }, S.tab === 'chat' ? 'Chat view (the conversation lives here in the real GUI)' : 'Trajectory view (the call trajectory lives here in the real GUI)'),
+      h('div', { class: 'hint' }, 'This prototype studies only the Beads tab — click Beads above to enter.')))
   } else {
     view.append(renderBeadsView())
   }
@@ -403,15 +403,15 @@ function renderBeadsView() {
   if (S.dataState === 'loading') return h('div', { style: 'flex:1' },
     h('div', { class: 'skel' }, Array.from({ length: 7 }, (_, k) => h('div', { class: 'skelRow', style: `width:${95 - k * 6}%` }))))
   if (S.dataState === 'empty') return h('div', { class: 'stateWrap' },
-    h('div', { class: 'big' }, '任务库为空'),
-    h('div', { class: 'hint' }, '此仓库的 .beads/ 中还没有任务。运行 bd create 创建第一个任务。'))
+    h('div', { class: 'big' }, 'Task store is empty'),
+    h('div', { class: 'hint' }, 'The .beads/ store in this repo has no issues yet — run bd create to add the first one.'))
   if (S.dataState === 'nobd') return h('div', {},
     h('div', { class: 'errBanner' }, '⚠',
-      h('div', {}, h('b', {}, '无法运行 bd'), h('div', { class: 'muted' }, '未找到 bd 命令 — 请安装 beads v1.2 或更高版本。')),
-      h('button', { class: 'btn btnGhost', style: 'margin-left:auto', onClick: () => { S.dataState = 'ok'; render() } }, '重试')),
-    h('div', { class: 'stateWrap' }, h('div', { class: 'big' }, '读取任务库失败'), h('div', { class: 'hint' }, '面板每 5 秒轮询一次；恢复安装后可手动重试。')))
+      h('div', {}, h('b', {}, 'Cannot run bd'), h('div', { class: 'muted' }, 'bd command not found — install beads v1.2 or newer.')),
+      h('button', { class: 'btn btnGhost', style: 'margin-left:auto', onClick: () => { S.dataState = 'ok'; render() } }, 'Retry')),
+    h('div', { class: 'stateWrap' }, h('div', { class: 'big' }, 'Failed to read the task store'), h('div', { class: 'hint' }, 'The panel polls every 5 s; retry manually once bd is installed.')))
   if (S.dataState === 'nobeads') return h('div', { class: 'stateWrap' },
-    h('div', { class: 'big' }, '此会话仓库没有 .beads/ 任务库'))
+    h('div', { class: 'big' }, 'No .beads/ store in this session repo'))
   return S.variant === 'A' ? renderA() : S.variant === 'B' ? renderB() : renderC()
 }
 
@@ -422,7 +422,7 @@ function statusDot(i) {
 function attnChip(i) {
   const openBs = blockersOf(i.id).filter(b => !isClosed(byId.get(b)))
   if (!openBs.length) return null
-  return h('span', { class: 'chip chipAttn', title: '阻塞于：' + openBs.join('、') }, '已阻塞 · ' + openBs.length)
+  return h('span', { class: 'chip chipAttn', title: 'Blocked by: ' + openBs.join(', ') }, 'Blocked · ' + openBs.length)
 }
 function typeChip(i) {
   const t = typeOf(i)
@@ -466,16 +466,16 @@ function gotoTicket(id) {
 function commentsBlock(i) {
   const list = COMMENTS[i.id] || []
   const wrap = h('div', { class: 'dtSection' },
-    h('div', { class: 'dtSectionH' }, '评论', list.length ? h('span', { class: 'countQuiet' }, list.length + ' 条') : null))
+    h('div', { class: 'dtSectionH' }, 'Comments', list.length ? h('span', { class: 'countQuiet' }, String(list.length)) : null))
   if (!S.loadedComments.has(i.id)) {
     wrap.append(h('button', { class: 'btn btnGhost', onClick: ev => {
       const btn = ev.currentTarget
-      btn.disabled = true; btn.textContent = '加载中…'
+      btn.disabled = true; btn.textContent = 'Loading…'
       setTimeout(() => { S.loadedComments.add(i.id); render() }, 550)
-    } }, list.length ? '加载评论' : '检查评论'))
+    } }, list.length ? 'Load comments' : 'Check for comments'))
     return wrap
   }
-  if (!list.length) { wrap.append(h('div', { class: 'dim', style: 'font-size:12px' }, '暂无评论')); return wrap }
+  if (!list.length) { wrap.append(h('div', { class: 'dim', style: 'font-size:12px' }, 'No comments yet')); return wrap }
   for (const c of list) {
     wrap.append(h('div', { class: 'comment' },
       h('div', { class: 'avatar' }, (c.author || '?').slice(0, 1).toUpperCase()),
@@ -493,19 +493,19 @@ function detailEl(i, opts) {
       h('h1', { class: 'dtTitle' }, i.title),
       h('span', { class: 'mono dim' }, i.id)),
     h('div', { class: 'dtMeta' },
-      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '状态'), h('span', { class: 'dtMetaV' }, statusDot(i), BUCKET_ZH[bucketOf(i)])),
-      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '优先级'), h('span', { class: 'dtMetaV' }, 'P' + i.priority)),
-      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '负责人'), h('span', { class: 'dtMetaV' }, i.assignee || '—')),
-      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '类型'), h('span', { class: 'dtMetaV' }, i.issue_type)),
-      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '更新'), h('span', { class: 'dtMetaV' }, fmtDate(i.updated_at)))),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, 'Status'), h('span', { class: 'dtMetaV' }, statusDot(i), BUCKET_LABEL[bucketOf(i)])),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, 'Priority'), h('span', { class: 'dtMetaV' }, 'P' + i.priority)),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, 'Assignee'), h('span', { class: 'dtMetaV' }, i.assignee || '—')),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, 'Type'), h('span', { class: 'dtMetaV' }, i.issue_type)),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, 'Updated'), h('span', { class: 'dtMetaV' }, fmtDate(i.updated_at)))),
     (i.labels || []).length ? h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:10px' },
       i.labels.map(l => h('span', { class: 'chip' + (l.startsWith('wayfinder:') ? ' chipType' : '') }, l))) : null,
-    h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '描述'), h('div', { class: 'md' }, md(i.description))),
-    i.notes ? h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '备注 (bd note)'), h('div', { class: 'noteBlock', style: 'white-space:pre-wrap' }, i.notes)) : null,
-    depList('阻塞于 (blocks)', blockersOf(i.id), '⊢'),
-    depList('阻塞着 (blocks)', ISSUES.filter(x => blockersOf(x.id).includes(i.id)).map(x => x.id), '⊣'),
-    depList('子任务 (children)', childrenOf(i.id), '∟'),
-    i.parent && byId.get(i.parent) ? depList('所属地图 (parent)', [i.parent], '↑') : null,
+    h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, 'Description'), h('div', { class: 'md' }, md(i.description))),
+    i.notes ? h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, 'Notes (bd note)'), h('div', { class: 'noteBlock', style: 'white-space:pre-wrap' }, i.notes)) : null,
+    depList('Blocked by (blocks)', blockersOf(i.id), '⊢'),
+    depList('Blocking (blocks)', ISSUES.filter(x => blockersOf(x.id).includes(i.id)).map(x => x.id), '⊣'),
+    depList('Children', childrenOf(i.id), '∟'),
+    i.parent && byId.get(i.parent) ? depList('Parent (epic)', [i.parent], '↑') : null,
     commentsBlock(i))
 }
 
@@ -624,7 +624,7 @@ function graphSvg(selIds, opts) {
     tx.textContent = (n.map ? '▣ ' : '') + (i.title.length > 30 ? i.title.slice(0, 30) + '…' : i.title)
     g.append(tx)
     const t2 = mk('text', { x: 14, y: n.map ? 38 : 37, class: 'id' })
-    t2.textContent = i.id + ' · ' + BUCKET_ZH[b] + ' · P' + i.priority
+    t2.textContent = i.id + ' · ' + BUCKET_LABEL[b] + ' · P' + i.priority
     g.append(t2)
     g.addEventListener('click', () => (opts.onNode || (id => { S.sel = id; render() }))(n.id))
     rootG.append(g)
@@ -652,11 +652,11 @@ function attachPan(svg, rootG) {
 
 function legendEl() {
   return h('div', { class: 'legend' },
-    h('div', {}, '━ 阻塞 blocks'), h('div', {}, '╌ 归属 parent-child'),
-    h('div', {}, h('span', { class: 'statDot st-frontier' }), '可认领'),
-    h('div', {}, h('span', { class: 'statDot st-progress' }), '进行中'),
-    h('div', {}, h('span', { class: 'statDot st-blocked' }), '已阻塞'),
-    h('div', {}, h('span', { class: 'statDot st-closed' }), '已完成'))
+    h('div', {}, '━ blocks'), h('div', {}, '╌ parent-child'),
+    h('div', {}, h('span', { class: 'statDot st-frontier' }), 'Frontier'),
+    h('div', {}, h('span', { class: 'statDot st-progress' }), 'In progress'),
+    h('div', {}, h('span', { class: 'statDot st-blocked' }), 'Blocked'),
+    h('div', {}, h('span', { class: 'statDot st-closed' }), 'Done'))
 }
 
 /* ================= variant A ================= */
@@ -673,19 +673,19 @@ function renderA() {
   } else {
     const g = graphSvg([S.mapFilter, ...mapTickets(S.mapFilter)], { dir: 'TB' })
     body.append(h('div', { class: 'vaGraphPane' },
-      h('div', { class: 'graphWrap' }, g.svg, legendEl(), h('div', { class: 'graphHint' }, '点击节点查看详情')),
+      h('div', { class: 'graphWrap' }, g.svg, legendEl(), h('div', { class: 'graphHint' }, 'Click a node for detail')),
       h('div', { class: 'vaDetail' }, detailEl(byId.get(S.sel)))))
   }
   return h('div', { class: 'vaRoot' },
     h('div', { class: 'toolbar' },
       h('div', { class: 'segment' },
-        h('button', { class: S.mode === 'list' ? 'on' : '', onClick: () => { S.mode = 'list'; render() } }, '列表'),
-        h('button', { class: S.mode === 'graph' ? 'on' : '', onClick: () => { S.mode = 'graph'; render() } }, '图表')),
+        h('button', { class: S.mode === 'list' ? 'on' : '', onClick: () => { S.mode = 'list'; render() } }, 'List'),
+        h('button', { class: S.mode === 'graph' ? 'on' : '', onClick: () => { S.mode = 'graph'; render() } }, 'Graph')),
       h('input', {
-        class: 'searchBox', placeholder: '搜索任务…', value: S.q,
+        class: 'searchBox', placeholder: 'Search issues…', value: S.q,
         onInput: ev => { S.q = ev.target.value; if (vaListEl) { vaListEl.innerHTML = ''; vaListEl.append(...renderAList()) } },
       }),
-      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, '显示 ' + ISSUES.length + ' 个任务 · ' + MAPS.length + ' 个分组')),
+      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, ISSUES.length + ' issues · ' + MAPS.length + ' groups')),
     body)
 }
 function renderAList() {
@@ -694,7 +694,7 @@ function renderAList() {
   const out = []
   const inProgAll = ISSUES.filter(i => inProg(i) && match(i))
   if (inProgAll.length) {
-    out.push(h('div', { class: 'subHead', style: 'padding-top:14px' }, '进行中（全部分组）', h('span', { class: 'n' }, inProgAll.length)))
+    out.push(h('div', { class: 'subHead', style: 'padding-top:14px' }, 'In progress (all groups)', h('span', { class: 'n' }, inProgAll.length)))
     out.push(...inProgAll.map(i => rowEl(i)))
   }
   const renderMapGroup = m => {
@@ -710,12 +710,12 @@ function renderAList() {
     },
       h('span', { class: 'caret' }, '▼'),
       h('span', { class: 'gt' }, m.title),
-      h('span', { class: 'chip' }, active + ' 进行中'),
-      done ? h('span', { class: 'countQuiet' }, done + ' 已完成') : null))
+      h('span', { class: 'chip' }, active + ' active'),
+      done ? h('span', { class: 'countQuiet' }, done + ' done') : null))
     if (openG) {
       for (const b of ['frontier', 'progress', 'blocked']) {
         if (!buckets[b].length) continue
-        out.push(h('div', { class: 'subHead' }, BUCKET_ZH[b], h('span', { class: 'n' }, buckets[b].length)))
+        out.push(h('div', { class: 'subHead' }, BUCKET_LABEL[b], h('span', { class: 'n' }, buckets[b].length)))
         out.push(...buckets[b].map(i => rowEl(i)))
       }
       if (buckets.closed.length) {
@@ -724,7 +724,7 @@ function renderAList() {
         out.push(h('button', {
           class: 'subHead asBtn',
           onClick: () => { openC ? S.openGroups.delete(key) : S.openGroups.add(key); render() },
-        }, h('span', { style: 'font-size:9px' }, openC ? '▾' : '▸'), '已完成', h('span', { class: 'n' }, buckets.closed.length)))
+        }, h('span', { style: 'font-size:9px' }, openC ? '▾' : '▸'), 'Done', h('span', { class: 'n' }, buckets.closed.length)))
         if (openC) out.push(...buckets.closed.map(i => rowEl(i)))
       }
     }
@@ -736,7 +736,7 @@ function renderAList() {
     out.push(h('button', {
       class: 'groupHead' + (S.openGroups.has('__loose') ? '' : ' closed'),
       onClick: () => { S.openGroups.has('__loose') ? S.openGroups.delete('__loose') : S.openGroups.add('__loose'); render() },
-    }, h('span', { class: 'caret' }, '▼'), h('span', { class: 'gt' }, '独立任务'), h('span', { class: 'chip' }, loose.length)))
+    }, h('span', { class: 'caret' }, '▼'), h('span', { class: 'gt' }, 'Standalone issues'), h('span', { class: 'chip' }, loose.length)))
     if (S.openGroups.has('__loose')) out.push(...loose.map(i => rowEl(i)))
   }
   return out
@@ -749,7 +749,7 @@ function renderB() {
     : [S.mapFilter, ...mapTickets(S.mapFilter)]
   const g = graphSvg(ids, { dir: 'LR', pan: true, focus: S.focus, onNode: id => { S.focus = id; S.sel = id; S.zoom = 1; S.panX = S.panY = 0; render() } })
   const canvas = h('div', { class: 'vbCanvas' }, g.svg, legendEl(),
-    h('div', { class: 'graphHint' }, S.focus ? '聚焦视图 · 1 跳自我图' : '滚轮缩放 · 拖拽平移 · 点击节点聚焦'))
+    h('div', { class: 'graphHint' }, S.focus ? 'Focus view · 1-hop ego graph' : 'Scroll to zoom · drag to pan · click a node to focus'))
   if (S.focus) canvas.append(h('div', { class: 'vbDetailCard' }, detailEl(byId.get(S.focus), { closable: true })))
   const frontierAll = ISSUES.filter(i => bucketOf(i) === 'frontier')
   return h('div', { class: 'vbRoot' },
@@ -759,11 +759,11 @@ function renderB() {
         onClick: () => { S.mapFilter = m.id; S.focus = null; S.zoom = 1; S.panX = S.panY = 0; render() },
       }, m.title)),
       S.focus
-        ? h('button', { class: 'btn btnGhost', style: 'margin-left:auto;height:28px;padding:3px 12px', onClick: () => { S.focus = null; render() } }, '← 返回整图')
-        : h('span', { class: 'countQuiet', style: 'margin-left:auto' }, MAPS.length + ' 个分组')),
+        ? h('button', { class: 'btn btnGhost', style: 'margin-left:auto;height:28px;padding:3px 12px', onClick: () => { S.focus = null; render() } }, '← Back to full graph')
+        : h('span', { class: 'countQuiet', style: 'margin-left:auto' }, MAPS.length + ' groups')),
     canvas,
     h('div', { class: 'vbQueue' },
-      h('span', { class: 'vbQueueH' }, '前沿队列 · ' + frontierAll.length),
+      h('span', { class: 'vbQueueH' }, 'Frontier queue · ' + frontierAll.length),
       frontierAll.map(i => h('button', {
         class: 'qChip' + (S.focus === i.id ? ' on' : ''),
         onClick: () => { S.focus = i.id; S.sel = i.id; render() },
@@ -784,12 +784,12 @@ function renderC() {
       }
       const total = [...lanes.values()].reduce((a, c) => a + c.length, 0)
       const colEl = h('div', { class: 'vcCol' },
-        h('div', { class: 'vcColHead' }, h('span', { class: 'statDot st-' + b }), BUCKET_ZH[b], h('span', { class: 'countQuiet' }, total)))
+        h('div', { class: 'vcColHead' }, h('span', { class: 'statDot st-' + b }), BUCKET_LABEL[b], h('span', { class: 'countQuiet' }, total)))
       const body = h('div', { class: 'vcColBody' })
       for (const [mid, items] of lanes) {
         if (!items.length) continue
         body.append(h('div', { class: 'laneHead' }, mid === '__loose'
-          ? h('span', {}, '独立任务')
+          ? h('span', {}, 'Standalone issues')
           : h('span', { title: byId.get(mid).title }, '▣ ' + byId.get(mid).title)))
         for (const i of items) {
           body.append(h('button', { class: 'card', onClick: () => { S.drawer = i.id; S.sel = i.id; render() } },
@@ -802,8 +802,8 @@ function renderC() {
     }))
   const root = h('div', { class: 'vcRoot' },
     h('div', { class: 'toolbar' },
-      h('span', { class: 'countQuiet' }, '按状态分列 · 按地图分泳道 · 点击卡片查看详情与自我图'),
-      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, '显示 ' + ISSUES.length + ' 个任务')),
+      h('span', { class: 'countQuiet' }, 'Columns by status · swimlanes by epic · click a card for detail + ego graph'),
+      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, ISSUES.length + ' issues')),
     board)
   if (S.drawer && byId.get(S.drawer)) {
     const i = byId.get(S.drawer)
@@ -819,7 +819,7 @@ function renderC() {
       h('div', { class: 'drawer' },
         h('button', { class: 'iconBtn', style: 'position:absolute;top:10px;right:10px', onClick: () => { S.drawer = null; render() } }, '✕'),
         detailEl(i),
-        h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '自我图 · 1 跳'), h('div', { class: 'egoWrap' }, g.svg))))
+        h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, 'Ego graph · 1 hop'), h('div', { class: 'egoWrap' }, g.svg))))
   }
   return root
 }
@@ -830,19 +830,19 @@ function renderSwitcher() {
   const cur = keys.indexOf(S.variant)
   const go = d => { S.variant = keys[(cur + d + keys.length) % keys.length]; S.zoom = 1; S.panX = S.panY = 0; render() }
   return h('div', { class: 'switcher' },
-    h('button', { onClick: () => go(-1), 'aria-label': '上一个变体' }, '←'),
+    h('button', { onClick: () => go(-1), 'aria-label': 'Previous variant' }, '←'),
     h('span', { class: 'lbl' }, S.variant + ' — ' + VARIANT_NAMES[S.variant]),
-    h('button', { onClick: () => go(1), 'aria-label': '下一个变体' }, '→'))
+    h('button', { onClick: () => go(1), 'aria-label': 'Next variant' }, '→'))
 }
 function renderDemoPanel() {
   return h('div', { class: 'demoPanel' },
-    h('label', {}, '深色主题', h('input', { type: 'checkbox', checked: S.dark, onChange: ev => { S.dark = ev.target.checked; render() } })),
-    h('label', {}, '数据状态', h('select', { onChange: ev => { S.dataState = ev.target.value; render() } },
-      h('option', { value: 'ok' }, '正常数据'),
-      h('option', { value: 'loading' }, '加载中'),
-      h('option', { value: 'empty' }, '空任务库'),
-      h('option', { value: 'nobd' }, 'bd 不可用'),
-      h('option', { value: 'nobeads' }, '无 .beads/'))))
+    h('label', {}, 'Dark theme', h('input', { type: 'checkbox', checked: S.dark, onChange: ev => { S.dark = ev.target.checked; render() } })),
+    h('label', {}, 'Data state', h('select', { onChange: ev => { S.dataState = ev.target.value; render() } },
+      h('option', { value: 'ok' }, 'Real data'),
+      h('option', { value: 'loading' }, 'Loading'),
+      h('option', { value: 'empty' }, 'Empty store'),
+      h('option', { value: 'nobd' }, 'bd missing'),
+      h('option', { value: 'nobeads' }, 'No .beads/'))))
 }
 
 /* keyboard variant cycling (not in inputs) */
