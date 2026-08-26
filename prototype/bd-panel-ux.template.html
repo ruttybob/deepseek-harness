@@ -1,0 +1,860 @@
+<!doctype html>
+<!-- PROTOTYPE — throwaway UI study for wayfinder ticket dsh-01e.4 (bd panel UX).
+     Single self-contained file: real .beads/ data + real --dsw-* tokens embedded.
+     Three structurally different variants, switchable via the bottom bar or ←/→.
+     Build: node prototype/build.mjs regenerates bd-panel-ux.html from this template. -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beads 面板原型 · dsh-01e.4</title>
+<style>
+/* __THEME_CSS__ */
+/* __BASE_CSS__ */
+</style>
+<style>
+/* ============ prototype app chrome (mimics the real conversation column) ============ */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--dsw-font-family);
+  font-size: var(--dsw-font-s-14);
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-base);
+  overflow: hidden;
+}
+#app { display: flex; flex-direction: column; height: 100%; }
+:root {
+  --gstat-frontier: var(--dsw-static-green-500);
+  --gstat-progress: var(--dsw-alias-state-business-primary);
+  --gstat-blocked: var(--dsw-static-amber-500);
+  --gstat-closed: var(--dsw-alias-label-dimmed);
+  --gedge: var(--dsw-static-neutral-400);
+}
+
+/* header row + tab strip — mirrors ConversationRoot .tabs/.tab (13/16 wt500, gap 36, 2px bar) */
+.shellHeader { flex: none; padding: 18px 24px 0; }
+.shellCrumb { font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-caption); padding: 0 0 0 8px; }
+.tabs { position: relative; z-index: 1; display: flex; gap: 36px; margin-top: 4px; padding-left: 8px; border-bottom: 1px solid var(--dsw-alias-border-l2); }
+.tab {
+  position: relative; padding: 0 0 11px; border: none; background: transparent;
+  font-size: 13px; line-height: 16px; font-weight: 500;
+  color: var(--dsw-alias-label-tertiary); cursor: pointer;
+}
+.tab::after { content: ''; position: absolute; right: 0; bottom: 1px; left: 0; height: 2px; border-radius: 2px; background: transparent; }
+.tabActive { color: var(--dsw-alias-state-business-primary); }
+.tabActive::after { background: var(--dsw-alias-state-business-primary); }
+.tabDisabled { color: var(--dsw-alias-label-dimmed); cursor: not-allowed; }
+.tabDisabled:hover .tabTip { display: block; }
+.tabTip {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+  white-space: nowrap; padding: 6px 10px; border-radius: 6px;
+  background: var(--dsw-alias-label-primary); color: var(--dsw-alias-label-primary-foreground);
+  font-size: var(--dsw-font-xxs-12); font-weight: 400;
+  box-shadow: var(--dsw-shadow-lv2);
+}
+.viewArea { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+
+/* ============ shared primitives ============ */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px;
+  border-radius: 5px; font-size: var(--dsw-font-xxxs-11); line-height: 1;
+  background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-secondary);
+}
+.chipAttn { background: var(--dsw-static-amber-100); color: var(--dsw-static-amber-600); }
+.chipType { background: transparent; border: 1px solid var(--dsw-alias-border-l2); }
+.prio { font-size: var(--dsw-font-xxxs-11); font-weight: 600; color: var(--dsw-alias-label-caption); }
+.prioHot { color: var(--dsw-static-amber-600); }
+.mono { font-family: var(--ds-font-family-code); font-size: 11px; }
+.muted { color: var(--dsw-alias-label-tertiary); }
+.dim { color: var(--dsw-alias-label-caption); }
+.statDot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.st-open { background: var(--dsw-alias-label-caption); }
+.st-frontier { background: var(--dsw-static-green-500); }
+.st-progress { background: var(--dsw-alias-state-business-primary); }
+.st-blocked { background: var(--dsw-static-amber-500); }
+.st-closed { background: var(--dsw-alias-label-dimmed); }
+.iconBtn {
+  border: none; background: transparent; cursor: pointer; color: var(--dsw-alias-label-tertiary);
+  font-size: 13px; padding: 4px 6px; border-radius: 6px; line-height: 1;
+}
+.iconBtn:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); }
+.btn {
+  border: none; cursor: pointer; border-radius: 7px; padding: 6px 14px;
+  font-size: var(--dsw-font-xs-13); font-weight: 500;
+  background: var(--dsw-alias-button-info-fill); color: #fff;
+}
+.btn:hover { background: var(--dsw-alias-button-info-hover); }
+.btnGhost { background: transparent; color: var(--dsw-alias-label-secondary); border: 1px solid var(--dsw-alias-border-l2); }
+.btnGhost:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.segment { display: inline-flex; padding: 2px; gap: 2px; border-radius: 8px; background: var(--dsw-alias-interactive-bg-hover); }
+.segment button {
+  border: none; background: transparent; cursor: pointer; border-radius: 6px;
+  padding: 4px 12px; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-tertiary);
+}
+.segment button.on { background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: var(--dsw-shadow-lv1); }
+.toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 24px; flex: none; }
+.searchBox {
+  flex: none; width: 220px; height: 30px; border-radius: 7px; border: 1px solid var(--dsw-alias-border-l2);
+  background: transparent; padding: 0 10px; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-primary);
+}
+.searchBox::placeholder { color: var(--dsw-alias-label-caption); }
+.mapChip {
+  border: 1px solid var(--dsw-alias-border-l2); background: transparent; cursor: pointer;
+  border-radius: 14px; padding: 3px 11px; font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-secondary);
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mapChip.on { border-color: var(--dsw-alias-state-business-primary); color: var(--dsw-alias-state-business-primary); background: var(--dsw-alias-interactive-bg-hover); }
+.countQuiet { color: var(--dsw-alias-label-caption); font-size: var(--dsw-font-xxxs-11); }
+
+/* states */
+.stateWrap { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: var(--dsw-alias-label-tertiary); }
+.stateWrap .big { font-size: var(--dsw-font-m-18); color: var(--dsw-alias-label-secondary); }
+.stateWrap .hint { font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-caption); max-width: 420px; text-align: center; line-height: 20px; }
+.errBanner {
+  margin: 16px 24px; padding: 14px 16px; border-radius: 10px;
+  background: var(--dsw-static-amber-100); color: var(--dsw-static-amber-900);
+  font-size: var(--dsw-font-xs-13); display: flex; align-items: center; gap: 12px;
+}
+.skel { margin: 14px 24px; }
+.skelRow { height: 52px; border-radius: 9px; margin-bottom: 10px; background: var(--dsw-alias-bg-skeleton); animation: skelPulse 1.2s ease-in-out infinite; }
+@keyframes skelPulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* ============ variant A: 双栏工作台 ============ */
+.vaRoot { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.vaBody { display: flex; flex: 1; min-height: 0; }
+.vaList { width: 430px; flex: none; border-right: 1px solid var(--dsw-alias-border-l2); overflow-y: auto; padding: 4px 0 24px; }
+.vaDetail { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 28px 40px; }
+.groupHead {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px 6px; background: var(--dsw-alias-bg-base);
+  font-size: var(--dsw-font-xxs-12); font-weight: 600; color: var(--dsw-alias-label-secondary);
+  cursor: pointer; user-select: none; border: none; width: 100%; text-align: left;
+}
+.groupHead .gt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.groupHead .caret { transition: transform .15s; color: var(--dsw-alias-label-caption); font-size: 10px; }
+.groupHead.closed .caret { transform: rotate(-90deg); }
+.subHead { display: flex; align-items: center; gap: 6px; padding: 8px 20px 4px; font-size: var(--dsw-font-xxxs-11); font-weight: 600; color: var(--dsw-alias-label-caption); letter-spacing: .3px; }
+.subHead .n { font-weight: 400; }
+.subHead.asBtn { cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: inherit; }
+.row {
+  display: flex; align-items: flex-start; gap: 9px; width: 100%; text-align: left; cursor: pointer;
+  border: none; background: transparent; padding: 7px 20px; border-radius: 0; font-family: inherit;
+}
+.row:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.rowSel { background: var(--dsw-alias-interactive-bg-active); box-shadow: inset 2px 0 0 var(--dsw-alias-state-business-primary); }
+.rowMain { flex: 1; min-width: 0; }
+.rowTitle { font-size: var(--dsw-font-xs-13); line-height: 19px; color: var(--dsw-alias-label-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rowMeta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.rowClosed .rowTitle { color: var(--dsw-alias-label-tertiary); text-decoration: line-through; text-decoration-color: var(--dsw-alias-border-l3); }
+.vaGraphPane { flex: 1; min-width: 0; display: flex; }
+.vaGraphPane .vaDetail { border-left: 1px solid var(--dsw-alias-border-l2); width: 400px; flex: none; }
+
+/* detail */
+.dtHead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dtTitle { font-size: var(--dsw-font-l-20); font-weight: 500; line-height: 28px; margin: 0; flex: 1; min-width: 260px; }
+.dtMeta { display: flex; gap: 22px; flex-wrap: wrap; margin: 12px 0 4px; padding: 12px 0; border-top: 1px solid var(--dsw-alias-border-l1); border-bottom: 1px solid var(--dsw-alias-border-l1); }
+.dtMetaItem { display: flex; flex-direction: column; gap: 3px; }
+.dtMetaK { font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); }
+.dtMetaV { font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-secondary); display: flex; align-items: center; gap: 6px; }
+.dtSection { margin: 20px 0 0; }
+.dtSectionH { font-size: var(--dsw-font-xxs-12); font-weight: 600; color: var(--dsw-alias-label-secondary); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.depRow { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 7px; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-secondary); font-family: inherit; }
+.depRow:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.depRow .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dsw-alias-label-primary); }
+.md { font-size: var(--dsw-font-xs-13); line-height: 21px; color: var(--dsw-alias-label-secondary); max-width: 76ch; }
+.md h2 { font-size: var(--dsw-font-s-strong-14); color: var(--dsw-alias-label-primary); margin: 18px 0 6px; }
+.md h3 { font-size: var(--dsw-font-xs-strong-13); color: var(--dsw-alias-label-primary); margin: 14px 0 4px; }
+.md code { font-family: var(--ds-font-family-code); font-size: 12px; background: var(--dsw-alias-markdown-inline-code); border-radius: 4px; padding: 1px 5px; }
+.md ul { margin: 4px 0; padding: 0; list-style: none; }
+.md li { margin: 2px 0; display: flex; gap: 8px; }
+.md li::before { content: '·'; color: var(--dsw-alias-label-caption); }
+.md p { margin: 6px 0; }
+.comment { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--dsw-alias-border-l1); }
+.avatar { width: 24px; height: 24px; border-radius: 50%; flex: none; background: var(--dsw-alias-interactive-bg-hover-accent); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--dsw-alias-label-secondary); }
+.cHead { display: flex; gap: 8px; align-items: baseline; font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); }
+.cAuthor { color: var(--dsw-alias-label-secondary); font-weight: 500; }
+.cBody { font-size: var(--dsw-font-xs-13); line-height: 20px; color: var(--dsw-alias-label-secondary); margin-top: 3px; white-space: pre-wrap; }
+.noteBlock { border-left: 2px solid var(--dsw-alias-border-l3); padding: 2px 0 2px 12px; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-tertiary); }
+
+/* ============ graph (shared SVG) ============ */
+.graphWrap { flex: 1; min-width: 0; position: relative; overflow: hidden; }
+.graphSvg { width: 100%; height: 100%; display: block; cursor: grab; }
+.graphSvg.panning { cursor: grabbing; }
+.gNode { cursor: pointer; }
+.gNode rect.box { fill: var(--dsw-alias-bg-layer-1); stroke: var(--dsw-alias-border-l3); }
+.gNode.mapNode rect.box { fill: var(--dsw-alias-interactive-bg-hover); }
+.gNode.sel rect.box { stroke: var(--dsw-alias-state-business-primary); stroke-width: 1.6; }
+.gNode:hover rect.box { stroke: var(--dsw-alias-state-business-primary); }
+.gNode text { font-size: 11px; fill: var(--dsw-alias-label-secondary); }
+.gNode .id { font-family: var(--ds-font-family-code); font-size: 9.5px; fill: var(--dsw-alias-label-caption); }
+.gNode .title { fill: var(--dsw-alias-label-primary); font-weight: 500; }
+.gNode.dimmed { opacity: .3; }
+.gEdge { fill: none; stroke: var(--gedge); stroke-width: 1.4; }
+.gEdge.pc { stroke-dasharray: 3 4; stroke-width: 1.2; }
+.gEdge.hi { stroke: var(--dsw-alias-state-business-primary); stroke-width: 1.8; }
+.legend {
+  position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 5px;
+  padding: 9px 12px; border-radius: 9px; background: var(--dsw-alias-bg-layer-1);
+  border: 1px solid var(--dsw-alias-border-l2); box-shadow: var(--dsw-shadow-lv1);
+  font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-tertiary);
+}
+.legend div { display: flex; align-items: center; gap: 7px; }
+.graphHint { position: absolute; right: 12px; top: 10px; font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); }
+
+/* ============ variant B: 画布优先 ============ */
+.vbRoot { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.vbCanvas { flex: 1; min-height: 0; position: relative; }
+.vbQueue { flex: none; border-top: 1px solid var(--dsw-alias-border-l2); padding: 8px 16px 10px; display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+.vbQueueH { font-size: var(--dsw-font-xxxs-11); font-weight: 600; color: var(--dsw-alias-label-caption); flex: none; letter-spacing: .3px; }
+.qChip {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  border: 1px solid var(--dsw-alias-border-l2); background: transparent; border-radius: 15px;
+  padding: 4px 12px; font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-secondary); max-width: 300px; font-family: inherit;
+}
+.qChip .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qChip:hover, .qChip.on { border-color: var(--dsw-alias-state-business-primary); color: var(--dsw-alias-state-business-primary); }
+.vbDetailCard {
+  position: absolute; top: 12px; right: 12px; bottom: 12px; width: 400px; z-index: 5;
+  border-radius: 12px; background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l2);
+  box-shadow: var(--dsw-shadow-lv3); overflow-y: auto; padding: 16px 20px 28px;
+}
+.vbDetailClose { position: absolute; top: 10px; right: 10px; }
+
+/* ============ variant C: 泳道看板 ============ */
+.vcRoot { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.vcBoard { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); overflow-x: auto; }
+.vcCol { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--dsw-alias-border-l1); }
+.vcColHead { flex: none; display: flex; align-items: center; gap: 7px; padding: 10px 14px 6px; font-size: var(--dsw-font-xxs-12); font-weight: 600; color: var(--dsw-alias-label-secondary); }
+.vcColBody { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+.laneHead { flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 6px 0; font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); max-width: 100%; }
+.laneHead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card {
+  text-align: left; cursor: pointer; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px;
+  background: var(--dsw-alias-bg-layer-1); padding: 9px 11px; display: flex; flex-direction: column; gap: 6px; font-family: inherit;
+}
+.card:hover { border-color: var(--dsw-alias-state-business-primary); }
+.cardTitle { font-size: var(--dsw-font-xs-13); line-height: 18px; color: var(--dsw-alias-label-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cardMeta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.drawerMask { position: fixed; inset: 0; z-index: 20; background: var(--dsw-alias-bg-mask-2); }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 21; width: 540px; max-width: 92vw;
+  background: var(--dsw-alias-bg-base); border-left: 1px solid var(--dsw-alias-border-l2);
+  box-shadow: var(--dsw-shadow-lv3); overflow-y: auto; padding: 20px 26px 40px;
+}
+.egoWrap { border: 1px solid var(--dsw-alias-border-l1); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); padding: 6px; }
+
+/* ============ prototype switcher + demo panel ============ */
+.switcher {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 50;
+  display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 999px;
+  background: #1d2129; color: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.28); font-size: 13px; user-select: none;
+}
+.switcher .lbl { padding: 0 10px; font-weight: 600; letter-spacing: .2px; }
+.switcher button { border: none; background: rgba(255,255,255,.12); color: #fff; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
+.switcher button:hover { background: rgba(255,255,255,.24); }
+.demoPanel {
+  position: fixed; right: 14px; top: 12px; z-index: 50; display: flex; flex-direction: column; gap: 7px;
+  padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--dsw-alias-border-l3);
+  background: var(--dsw-alias-bg-layer-1); font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-tertiary);
+}
+.demoPanel label { display: flex; align-items: center; gap: 6px; }
+.demoPanel select { font-size: var(--dsw-font-xxs-12); border-radius: 6px; border: 1px solid var(--dsw-alias-border-l2); background: transparent; color: var(--dsw-alias-label-secondary); padding: 2px 4px; }
+.protoBadge {
+  position: fixed; left: 12px; bottom: 14px; z-index: 50; font-size: 10px; letter-spacing: .8px;
+  color: var(--dsw-alias-label-dimmed); border: 1px dashed var(--dsw-alias-border-l3); border-radius: 5px; padding: 3px 7px;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="protoBadge">PROTOTYPE · dsh-01e.4 · throwaway</div>
+<script type="application/json" id="bd-data">__BD_DATA__</script>
+<script>
+'use strict'
+/* ================= data + derived model (bd ready semantics) ================= */
+const RAW = JSON.parse(document.getElementById('bd-data').textContent)
+const ISSUES = RAW.issues
+const COMMENTS = RAW.comments
+const byId = new Map(ISSUES.map(i => [i.id, i]))
+/* Group roots are epics — any issue that is a parent (wayfinder maps and plain
+   epics alike); the wayfinder:map label also rides on tickets in this store,
+   so it cannot identify maps. */
+const MAPS = ISSUES.filter(i => ISSUES.some(x => x.parent === i.id))
+
+function blockersOf(id) {
+  const i = byId.get(id)
+  return (i.dependencies || []).filter(d => d.type === 'blocks').map(d => d.depends_on_id)
+}
+function childrenOf(id) { return ISSUES.filter(i => i.parent === id).map(i => i.id) }
+const isClosed = i => i.status === 'closed'
+const inProg = i => i.status === 'in_progress'
+function bucketOf(i) {
+  if (isClosed(i)) return 'closed'
+  if (inProg(i)) return 'progress'
+  const bs = blockersOf(i.id)
+  return bs.some(b => !isClosed(byId.get(b))) ? 'blocked' : 'frontier'
+}
+const BUCKET_ZH = { frontier: '可认领', progress: '进行中', blocked: '已阻塞', closed: '已完成' }
+const looseIssues = ISSUES.filter(i => !i.parent && !MAPS.some(m => m.id === i.id))
+function mapTickets(mid) { return childrenOf(mid) }
+function fmtDate(iso) { return (iso || '').slice(0, 10) }
+function typeOf(i) { return ((i.labels || []).find(l => l.startsWith('wayfinder:') && l !== 'wayfinder:map') || '').slice(9) }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])) }
+
+/* ================= tiny DOM builder ================= */
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag)
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === 'class') el.className = v
+    else if (k === 'html') el.innerHTML = v
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v)
+    else if (k === 'style') el.style.cssText = v
+    else el.setAttribute(k, v)
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue
+    el.append(kid.nodeType ? kid : document.createTextNode(kid))
+  }
+  return el
+}
+
+/* mini markdown: headings, lists, bold, inline code, links */
+function md(text) {
+  const lines = String(text || '').split('\n')
+  const out = []
+  let list = null
+  const inline = s => esc(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+  const flush = () => { if (list) { out.push(h('ul', {}, list.map(x => h('li', { html: inline(x) })))); list = null } }
+  for (const ln of lines) {
+    const hd = ln.match(/^(#{2,3})\s+(.*)/)
+    const li = ln.match(/^\s*[-•]\s+(.*)/)
+    if (li) { (list ??= []).push(li[1]); continue }
+    flush()
+    if (hd) out.push(h(hd[1].length === 2 ? 'h2' : 'h3', { html: inline(hd[2]) }))
+    else if (ln.trim()) out.push(h('p', { html: inline(ln) }))
+  }
+  flush()
+  return out
+}
+
+/* ================= app state ================= */
+const S = {
+  variant: 'A',
+  dark: false,
+  dataState: 'ok', // ok | loading | empty | nobd | nobeads
+  tab: 'beads',     // chat | trajectory | beads
+  sel: null,
+  mapFilter: 'dsh-01e',
+  mode: 'list',     // variant A: list | graph
+  openGroups: new Set(MAPS.map(m => m.id).concat(['__loose'])),
+  focus: null,      // variant B: ego-focus ticket id
+  zoom: 1, panX: 0, panY: 0,
+  drawer: null,     // variant C: drawer ticket id
+  loadedComments: new Set(),
+  q: '',
+}
+const VARIANT_NAMES = { A: '双栏工作台 · list-first', B: '画布优先 · graph-first', C: '泳道看板 · board' }
+const app = document.getElementById('app')
+let vaListEl = null // search refreshes only the A list, keeping input focus
+function render() {
+  app.innerHTML = ''
+  vaListEl = null
+  document.body.toggleAttribute('data-ds-dark-theme', S.dark)
+  app.append(renderShell())
+}
+
+/* ================= shell: header + tabs + view area ================= */
+function renderShell() {
+  const beadsAvailable = S.dataState !== 'nobeads'
+  if (!beadsAvailable && S.tab === 'beads') S.tab = 'chat' // auto-return (dsh-01e.3)
+  const tabs = [
+    { id: 'chat', label: '对话' },
+    { id: 'trajectory', label: '轨迹' },
+    { id: 'beads', label: 'Beads', disabled: !beadsAvailable },
+  ]
+  const header = h('div', { class: 'shellHeader' },
+    h('div', { class: 'shellCrumb' }, 'deepseek-harness · 会话 dsh-01e.4'),
+    h('div', { class: 'tabs' }, tabs.map(t => {
+      const btn = h('button', {
+        class: 'tab' + (S.tab === t.id ? ' tabActive' : '') + (t.disabled ? ' tabDisabled' : ''),
+        onClick: () => { if (!t.disabled) { S.tab = t.id; render() } },
+      }, t.label)
+      if (t.disabled) btn.append(h('span', { class: 'tabTip' }, '此会话仓库没有 .beads/ 任务库'))
+      return btn
+    })))
+  const view = h('div', { class: 'viewArea' })
+  if (S.tab !== 'beads') {
+    view.append(h('div', { class: 'stateWrap' },
+      h('div', { class: 'big' }, S.tab === 'chat' ? '对话视图（真实 GUI 中为聊天记录）' : '轨迹视图（真实 GUI 中为调用轨迹）'),
+      h('div', { class: 'hint' }, '本原型只研究 Beads 标签页 — 点击上方「Beads」进入。')))
+  } else {
+    view.append(renderBeadsView())
+  }
+  return h('div', { style: 'display:flex;flex-direction:column;height:100%' }, header, view, renderDemoPanel(), renderSwitcher())
+}
+
+/* ================= beads view: dispatch by data state ================= */
+function renderBeadsView() {
+  if (S.dataState === 'loading') return h('div', { style: 'flex:1' },
+    h('div', { class: 'skel' }, Array.from({ length: 7 }, (_, k) => h('div', { class: 'skelRow', style: `width:${95 - k * 6}%` }))))
+  if (S.dataState === 'empty') return h('div', { class: 'stateWrap' },
+    h('div', { class: 'big' }, '任务库为空'),
+    h('div', { class: 'hint' }, '此仓库的 .beads/ 中还没有任务。运行 bd create 创建第一个任务。'))
+  if (S.dataState === 'nobd') return h('div', {},
+    h('div', { class: 'errBanner' }, '⚠',
+      h('div', {}, h('b', {}, '无法运行 bd'), h('div', { class: 'muted' }, '未找到 bd 命令 — 请安装 beads v1.2 或更高版本。')),
+      h('button', { class: 'btn btnGhost', style: 'margin-left:auto', onClick: () => { S.dataState = 'ok'; render() } }, '重试')),
+    h('div', { class: 'stateWrap' }, h('div', { class: 'big' }, '读取任务库失败'), h('div', { class: 'hint' }, '面板每 5 秒轮询一次；恢复安装后可手动重试。')))
+  if (S.dataState === 'nobeads') return h('div', { class: 'stateWrap' },
+    h('div', { class: 'big' }, '此会话仓库没有 .beads/ 任务库'))
+  return S.variant === 'A' ? renderA() : S.variant === 'B' ? renderB() : renderC()
+}
+
+/* ================= shared: rows / chips / detail / graph ================= */
+function statusDot(i) {
+  return h('span', { class: 'statDot st-' + bucketOf(i) })
+}
+function attnChip(i) {
+  const openBs = blockersOf(i.id).filter(b => !isClosed(byId.get(b)))
+  if (!openBs.length) return null
+  return h('span', { class: 'chip chipAttn', title: '阻塞于：' + openBs.join('、') }, '已阻塞 · ' + openBs.length)
+}
+function typeChip(i) {
+  const t = typeOf(i)
+  return t ? h('span', { class: 'chip chipType' }, t) : null
+}
+function prioMark(i) {
+  return h('span', { class: 'prio' + (i.priority <= 1 ? ' prioHot' : '') }, 'P' + i.priority)
+}
+
+function rowEl(i) {
+  return h('button', {
+    class: 'row' + (S.sel === i.id ? ' rowSel' : '') + (isClosed(i) ? ' rowClosed' : ''),
+    onClick: () => { S.sel = i.id; render() },
+  },
+    statusDot(i),
+    h('div', { class: 'rowMain' },
+      h('div', { class: 'rowTitle' }, i.title),
+      h('div', { class: 'rowMeta' },
+        h('span', { class: 'mono dim' }, i.id),
+        prioMark(i), typeChip(i), attnChip(i),
+        i.comment_count ? h('span', { class: 'countQuiet' }, '● ' + i.comment_count) : null)))
+}
+
+function depList(title, ids, icon) {
+  const items = ids.map(id => byId.get(id)).filter(Boolean)
+  if (!items.length) return null
+  return h('div', { class: 'dtSection' },
+    h('div', { class: 'dtSectionH' }, icon || '', title, h('span', { class: 'countQuiet' }, items.length)),
+    items.map(d => h('button', { class: 'depRow', onClick: () => gotoTicket(d.id) },
+      statusDot(d), h('span', { class: 'mono dim' }, d.id), h('span', { class: 't' }, d.title))))
+}
+function gotoTicket(id) {
+  S.sel = id
+  S.focus = id
+  S.drawer = id
+  const target = byId.get(id)
+  if (target.parent) S.mapFilter = target.parent
+  render()
+}
+
+function commentsBlock(i) {
+  const list = COMMENTS[i.id] || []
+  const wrap = h('div', { class: 'dtSection' },
+    h('div', { class: 'dtSectionH' }, '评论', list.length ? h('span', { class: 'countQuiet' }, list.length + ' 条') : null))
+  if (!S.loadedComments.has(i.id)) {
+    wrap.append(h('button', { class: 'btn btnGhost', onClick: ev => {
+      const btn = ev.currentTarget
+      btn.disabled = true; btn.textContent = '加载中…'
+      setTimeout(() => { S.loadedComments.add(i.id); render() }, 550)
+    } }, list.length ? '加载评论' : '检查评论'))
+    return wrap
+  }
+  if (!list.length) { wrap.append(h('div', { class: 'dim', style: 'font-size:12px' }, '暂无评论')); return wrap }
+  for (const c of list) {
+    wrap.append(h('div', { class: 'comment' },
+      h('div', { class: 'avatar' }, (c.author || '?').slice(0, 1).toUpperCase()),
+      h('div', { style: 'min-width:0' },
+        h('div', { class: 'cHead' }, h('span', { class: 'cAuthor' }, c.author), fmtDate(c.created_at)),
+        h('div', { class: 'cBody' }, c.text))))
+  }
+  return wrap
+}
+
+function detailEl(i, opts) {
+  return h('div', { style: 'position:relative' },
+    opts?.closable ? h('button', { class: 'iconBtn vbDetailClose', onClick: () => { S.focus = null; render() } }, '✕') : null,
+    h('div', { class: 'dtHead' },
+      h('h1', { class: 'dtTitle' }, i.title),
+      h('span', { class: 'mono dim' }, i.id)),
+    h('div', { class: 'dtMeta' },
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '状态'), h('span', { class: 'dtMetaV' }, statusDot(i), BUCKET_ZH[bucketOf(i)])),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '优先级'), h('span', { class: 'dtMetaV' }, 'P' + i.priority)),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '负责人'), h('span', { class: 'dtMetaV' }, i.assignee || '—')),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '类型'), h('span', { class: 'dtMetaV' }, i.issue_type)),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '更新'), h('span', { class: 'dtMetaV' }, fmtDate(i.updated_at)))),
+    (i.labels || []).length ? h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:10px' },
+      i.labels.map(l => h('span', { class: 'chip' + (l.startsWith('wayfinder:') ? ' chipType' : '') }, l))) : null,
+    h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '描述'), h('div', { class: 'md' }, md(i.description))),
+    i.notes ? h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '备注 (bd note)'), h('div', { class: 'noteBlock', style: 'white-space:pre-wrap' }, i.notes)) : null,
+    depList('阻塞于 (blocks)', blockersOf(i.id), '⊢'),
+    depList('阻塞着 (blocks)', ISSUES.filter(x => blockersOf(x.id).includes(i.id)).map(x => x.id), '⊣'),
+    depList('子任务 (children)', childrenOf(i.id), '∟'),
+    i.parent && byId.get(i.parent) ? depList('所属地图 (parent)', [i.parent], '↑') : null,
+    commentsBlock(i))
+}
+
+/* ---------- layered DAG layout (prototype stand-in for dagre, dsh-01e.1) ---------- */
+function layout(nodes, edges, dir) {
+  const ids = new Set(nodes.map(n => n.id))
+  const next = new Map(nodes.map(n => [n.id, []]))
+  const indeg = new Map(nodes.map(n => [n.id, 0]))
+  for (const e of edges) {
+    if (!ids.has(e.from) || !ids.has(e.to)) continue
+    next.get(e.from).push(e.to)
+    indeg.set(e.to, indeg.get(e.to) + 1)
+  }
+  const layer = new Map(nodes.filter(n => indeg.get(n.id) === 0).map(n => [n.id, 0]))
+  const q = [...layer.keys()]
+  while (q.length) {
+    const id = q.shift()
+    for (const t of next.get(id)) {
+      const cand = layer.get(id) + 1
+      if (!layer.has(t) || layer.get(t) < cand) layer.set(t, cand)
+      indeg.set(t, indeg.get(t) - 1)
+      if (indeg.get(t) === 0) q.push(t)
+    }
+  }
+  const byLayer = new Map()
+  for (const n of nodes) {
+    const l = layer.get(n.id) || 0
+    if (!byLayer.has(l)) byLayer.set(l, [])
+    byLayer.get(l).push(n)
+  }
+  const pred = new Map(nodes.map(n => [n.id, []]))
+  for (const e of edges) if (ids.has(e.from) && ids.has(e.to)) pred.get(e.to).push(e.from)
+  const pos = new Map()
+  const GAP_N = 26, GAP_L = 78
+  if (dir === 'LR') {
+    let x = 20
+    for (const l of [...byLayer.keys()].sort((a, b) => a - b)) {
+      const arr = byLayer.get(l)
+      arr.sort((a, b) => String(pred.get(a.id)[0] || '').localeCompare(String(pred.get(b.id)[0] || '')))
+      let y = 20, maxW = 0
+      for (const n of arr) { pos.set(n.id, { x, y }); y += n.h + GAP_N; maxW = Math.max(maxW, n.w) }
+      x += maxW + GAP_L
+    }
+  } else {
+    let y = 20
+    for (const l of [...byLayer.keys()].sort((a, b) => a - b)) {
+      const arr = byLayer.get(l)
+      arr.sort((a, b) => String(pred.get(a.id)[0] || '').localeCompare(String(pred.get(b.id)[0] || '')))
+      let x = 20, maxH = 0
+      for (const n of arr) { pos.set(n.id, { x, y }); x += n.w + GAP_N; maxH = Math.max(maxH, n.h) }
+      y += maxH + GAP_L
+    }
+  }
+  const W = Math.max(...[...pos.values()].map(p => p.x), 0) + 260
+  const H = Math.max(...[...pos.values()].map(p => p.y), 0) + 120
+  return { pos, W, H }
+}
+
+function graphSvg(selIds, opts) {
+  const dir = opts.dir || 'TB'
+  const selSet = new Set(selIds)
+  const nodes = selIds.map(id => {
+    const isMap = MAPS.some(m => m.id === id)
+    return { id, w: isMap ? 252 : 216, h: isMap ? 50 : 60, map: isMap }
+  })
+  const edges = []
+  const seen = new Set()
+  for (const id of selIds) {
+    for (const b of blockersOf(id)) if (selSet.has(b) && !seen.has(b + '>' + id)) { seen.add(b + '>' + id); edges.push({ from: b, to: id }) }
+    for (const c of childrenOf(id)) if (selSet.has(c) && !seen.has(id + '>' + c)) { seen.add(id + '>' + c); edges.push({ from: id, to: c, pc: true }) }
+  }
+  const { pos, W, H } = layout(nodes, edges, dir)
+  const nById = new Map(nodes.map(n => [n.id, n]))
+  const inEgo = id => {
+    if (!opts.focus || opts.focus === id) return true
+    const f = opts.focus
+    return blockersOf(f).includes(id) || blockersOf(id).includes(f) || byId.get(f)?.parent === id || byId.get(id)?.parent === f
+  }
+  const svgNS = 'http://www.w3.org/2000/svg'
+  const mk = (t, at) => { const e = document.createElementNS(svgNS, t); for (const [k, v] of Object.entries(at)) e.setAttribute(k, v); return e }
+  const svg = mk('svg', { class: 'graphSvg', viewBox: `0 0 ${W} ${H}` })
+  const rootG = mk('g', {})
+  svg.append(rootG)
+  if (opts.pan) rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+  const defs = mk('defs', {})
+  for (const id of ['arr-blocks', 'arr-pc']) {
+    const m = mk('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' })
+    m.append(mk('path', { d: 'M 0 1 L 9 5 L 0 9 z', fill: 'var(--gedge)' }))
+    defs.append(m)
+  }
+  rootG.append(defs)
+  const anchor = (id, side) => {
+    const n = nById.get(id), p = pos.get(id)
+    return side === 'out'
+      ? (dir === 'LR' ? { x: p.x + n.w, y: p.y + n.h / 2 } : { x: p.x + n.w / 2, y: p.y + n.h })
+      : (dir === 'LR' ? { x: p.x, y: p.y + n.h / 2 } : { x: p.x + n.w / 2, y: p.y })
+  }
+  for (const e of edges) {
+    const a = anchor(e.from, 'out'), b = anchor(e.to, 'in')
+    const path = dir === 'LR'
+      ? `M${a.x},${a.y} C${a.x + 46},${a.y} ${b.x - 46},${b.y} ${b.x},${b.y}`
+      : `M${a.x},${a.y} C${a.x},${a.y + 42} ${b.x},${b.y - 42} ${b.x},${b.y}`
+    rootG.append(mk('path', { d: path, class: 'gEdge' + (e.pc ? ' pc' : '') + (opts.focus && inEgo(e.from) && inEgo(e.to) ? ' hi' : ''), markerEnd: `url(#${e.pc ? 'arr-pc' : 'arr-blocks'})` }))
+  }
+  for (const n of nodes) {
+    const i = byId.get(n.id)
+    const p = pos.get(n.id)
+    const g = mk('g', {
+      class: 'gNode' + (n.map ? ' mapNode' : '') + ((S.sel === n.id || S.focus === n.id) ? ' sel' : '') + (opts.focus && !inEgo(n.id) ? ' dimmed' : ''),
+      transform: `translate(${p.x},${p.y})`,
+    })
+    const b = bucketOf(i)
+    g.append(mk('rect', { class: 'box', width: n.w, height: n.h, rx: 9 }))
+    g.append(mk('rect', { x: 0, y: 0, width: 3.5, height: n.h, rx: 2, fill: `var(--gstat-${b})` }))
+    const tx = mk('text', { x: 14, y: n.map ? 21 : 19, class: 'title' })
+    tx.textContent = (n.map ? '▣ ' : '') + (i.title.length > 30 ? i.title.slice(0, 30) + '…' : i.title)
+    g.append(tx)
+    const t2 = mk('text', { x: 14, y: n.map ? 38 : 37, class: 'id' })
+    t2.textContent = i.id + ' · ' + BUCKET_ZH[b] + ' · P' + i.priority
+    g.append(t2)
+    g.addEventListener('click', () => (opts.onNode || (id => { S.sel = id; render() }))(n.id))
+    rootG.append(g)
+  }
+  if (opts.pan) attachPan(svg, rootG)
+  return { svg, W, H }
+}
+
+function attachPan(svg, rootG) {
+  let drag = null
+  svg.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY, px: S.panX, py: S.panY }; svg.classList.add('panning') })
+  svg.addEventListener('mousemove', e => {
+    if (!drag) return
+    S.panX = drag.px + (e.clientX - drag.x)
+    S.panY = drag.py + (e.clientY - drag.y)
+    rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+  })
+  window.addEventListener('mouseup', () => { drag = null; svg.classList.remove('panning') })
+  svg.addEventListener('wheel', e => {
+    e.preventDefault()
+    S.zoom = Math.min(3, Math.max(.3, S.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)))
+    rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+  }, { passive: false })
+}
+
+function legendEl() {
+  return h('div', { class: 'legend' },
+    h('div', {}, '━ 阻塞 blocks'), h('div', {}, '╌ 归属 parent-child'),
+    h('div', {}, h('span', { class: 'statDot st-frontier' }), '可认领'),
+    h('div', {}, h('span', { class: 'statDot st-progress' }), '进行中'),
+    h('div', {}, h('span', { class: 'statDot st-blocked' }), '已阻塞'),
+    h('div', {}, h('span', { class: 'statDot st-closed' }), '已完成'))
+}
+
+/* ================= variant A ================= */
+function renderA() {
+  const tickets = mapTickets(S.mapFilter)
+  if (!S.sel || !byId.has(S.sel) || (byId.get(S.sel).parent !== S.mapFilter && S.sel !== S.mapFilter)) {
+    S.sel = tickets[0] || S.mapFilter
+  }
+  const body = h('div', { class: 'vaBody' })
+  if (S.mode === 'list') {
+    vaListEl = h('div', { class: 'vaList' })
+    vaListEl.append(...renderAList())
+    body.append(vaListEl, h('div', { class: 'vaDetail' }, detailEl(byId.get(S.sel))))
+  } else {
+    const g = graphSvg([S.mapFilter, ...mapTickets(S.mapFilter)], { dir: 'TB' })
+    body.append(h('div', { class: 'vaGraphPane' },
+      h('div', { class: 'graphWrap' }, g.svg, legendEl(), h('div', { class: 'graphHint' }, '点击节点查看详情')),
+      h('div', { class: 'vaDetail' }, detailEl(byId.get(S.sel)))))
+  }
+  return h('div', { class: 'vaRoot' },
+    h('div', { class: 'toolbar' },
+      h('div', { class: 'segment' },
+        h('button', { class: S.mode === 'list' ? 'on' : '', onClick: () => { S.mode = 'list'; render() } }, '列表'),
+        h('button', { class: S.mode === 'graph' ? 'on' : '', onClick: () => { S.mode = 'graph'; render() } }, '图表')),
+      h('input', {
+        class: 'searchBox', placeholder: '搜索任务…', value: S.q,
+        onInput: ev => { S.q = ev.target.value; if (vaListEl) { vaListEl.innerHTML = ''; vaListEl.append(...renderAList()) } },
+      }),
+      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, '显示 ' + ISSUES.length + ' 个任务 · ' + MAPS.length + ' 个分组')),
+    body)
+}
+function renderAList() {
+  const q = S.q.toLowerCase()
+  const match = i => !q || i.title.toLowerCase().includes(q) || i.id.includes(q)
+  const out = []
+  const inProgAll = ISSUES.filter(i => inProg(i) && match(i))
+  if (inProgAll.length) {
+    out.push(h('div', { class: 'subHead', style: 'padding-top:14px' }, '进行中（全部分组）', h('span', { class: 'n' }, inProgAll.length)))
+    out.push(...inProgAll.map(i => rowEl(i)))
+  }
+  const renderMapGroup = m => {
+    const tickets = mapTickets(m.id).map(id => byId.get(id)).filter(match)
+    if (!tickets.length) return
+    const openG = S.openGroups.has(m.id)
+    const buckets = { frontier: [], progress: [], blocked: [], closed: [] }
+    for (const t of tickets) buckets[bucketOf(t)].push(t)
+    const done = buckets.closed.length, active = tickets.length - done
+    out.push(h('button', {
+      class: 'groupHead' + (openG ? '' : ' closed'),
+      onClick: () => { openG ? S.openGroups.delete(m.id) : S.openGroups.add(m.id); render() },
+    },
+      h('span', { class: 'caret' }, '▼'),
+      h('span', { class: 'gt' }, m.title),
+      h('span', { class: 'chip' }, active + ' 进行中'),
+      done ? h('span', { class: 'countQuiet' }, done + ' 已完成') : null))
+    if (openG) {
+      for (const b of ['frontier', 'progress', 'blocked']) {
+        if (!buckets[b].length) continue
+        out.push(h('div', { class: 'subHead' }, BUCKET_ZH[b], h('span', { class: 'n' }, buckets[b].length)))
+        out.push(...buckets[b].map(i => rowEl(i)))
+      }
+      if (buckets.closed.length) {
+        const key = m.id + ':c'
+        const openC = S.openGroups.has(key)
+        out.push(h('button', {
+          class: 'subHead asBtn',
+          onClick: () => { openC ? S.openGroups.delete(key) : S.openGroups.add(key); render() },
+        }, h('span', { style: 'font-size:9px' }, openC ? '▾' : '▸'), '已完成', h('span', { class: 'n' }, buckets.closed.length)))
+        if (openC) out.push(...buckets.closed.map(i => rowEl(i)))
+      }
+    }
+  }
+  const order = MAPS.some(m => m.id === S.mapFilter) ? [S.mapFilter, ...MAPS.filter(m => m.id !== S.mapFilter).map(m => m.id)] : MAPS.map(m => m.id)
+  for (const mid of order) renderMapGroup(byId.get(mid))
+  const loose = looseIssues.filter(match)
+  if (loose.length) {
+    out.push(h('button', {
+      class: 'groupHead' + (S.openGroups.has('__loose') ? '' : ' closed'),
+      onClick: () => { S.openGroups.has('__loose') ? S.openGroups.delete('__loose') : S.openGroups.add('__loose'); render() },
+    }, h('span', { class: 'caret' }, '▼'), h('span', { class: 'gt' }, '独立任务'), h('span', { class: 'chip' }, loose.length)))
+    if (S.openGroups.has('__loose')) out.push(...loose.map(i => rowEl(i)))
+  }
+  return out
+}
+
+/* ================= variant B ================= */
+function renderB() {
+  const ids = S.focus
+    ? [S.focus, ...blockersOf(S.focus), ...ISSUES.filter(x => blockersOf(x.id).includes(S.focus)).map(x => x.id), byId.get(S.focus).parent, ...childrenOf(S.focus)].filter(Boolean)
+    : [S.mapFilter, ...mapTickets(S.mapFilter)]
+  const g = graphSvg(ids, { dir: 'LR', pan: true, focus: S.focus, onNode: id => { S.focus = id; S.sel = id; S.zoom = 1; S.panX = S.panY = 0; render() } })
+  const canvas = h('div', { class: 'vbCanvas' }, g.svg, legendEl(),
+    h('div', { class: 'graphHint' }, S.focus ? '聚焦视图 · 1 跳自我图' : '滚轮缩放 · 拖拽平移 · 点击节点聚焦'))
+  if (S.focus) canvas.append(h('div', { class: 'vbDetailCard' }, detailEl(byId.get(S.focus), { closable: true })))
+  const frontierAll = ISSUES.filter(i => bucketOf(i) === 'frontier')
+  return h('div', { class: 'vbRoot' },
+    h('div', { class: 'toolbar', style: 'padding-bottom:6px' },
+      MAPS.map(m => h('button', {
+        class: 'mapChip' + (S.mapFilter === m.id ? ' on' : ''), title: m.title,
+        onClick: () => { S.mapFilter = m.id; S.focus = null; S.zoom = 1; S.panX = S.panY = 0; render() },
+      }, m.title)),
+      S.focus
+        ? h('button', { class: 'btn btnGhost', style: 'margin-left:auto;height:28px;padding:3px 12px', onClick: () => { S.focus = null; render() } }, '← 返回整图')
+        : h('span', { class: 'countQuiet', style: 'margin-left:auto' }, MAPS.length + ' 个分组')),
+    canvas,
+    h('div', { class: 'vbQueue' },
+      h('span', { class: 'vbQueueH' }, '前沿队列 · ' + frontierAll.length),
+      frontierAll.map(i => h('button', {
+        class: 'qChip' + (S.focus === i.id ? ' on' : ''),
+        onClick: () => { S.focus = i.id; S.sel = i.id; render() },
+      }, h('span', { class: 'statDot st-frontier' }), h('span', { class: 'mono dim' }, i.id), h('span', { class: 't' }, i.title)))))
+}
+
+/* ================= variant C ================= */
+function renderC() {
+  const cols = ['frontier', 'progress', 'blocked', 'closed']
+  const isMap = id => MAPS.some(m => m.id === id)
+  const board = h('div', { class: 'vcBoard' },
+    cols.map(b => {
+      const lanes = new Map([...MAPS.map(m => [m.id, []]), ['__loose', []]])
+      for (const i of ISSUES) {
+        if (isMap(i.id) || bucketOf(i) !== b) continue
+        const key = i.parent && lanes.has(i.parent) ? i.parent : '__loose'
+        lanes.get(key).push(i)
+      }
+      const total = [...lanes.values()].reduce((a, c) => a + c.length, 0)
+      const colEl = h('div', { class: 'vcCol' },
+        h('div', { class: 'vcColHead' }, h('span', { class: 'statDot st-' + b }), BUCKET_ZH[b], h('span', { class: 'countQuiet' }, total)))
+      const body = h('div', { class: 'vcColBody' })
+      for (const [mid, items] of lanes) {
+        if (!items.length) continue
+        body.append(h('div', { class: 'laneHead' }, mid === '__loose'
+          ? h('span', {}, '独立任务')
+          : h('span', { title: byId.get(mid).title }, '▣ ' + byId.get(mid).title)))
+        for (const i of items) {
+          body.append(h('button', { class: 'card', onClick: () => { S.drawer = i.id; S.sel = i.id; render() } },
+            h('div', { class: 'cardTitle' }, i.title),
+            h('div', { class: 'cardMeta' }, h('span', { class: 'mono dim' }, i.id), prioMark(i), typeChip(i), attnChip(i))))
+        }
+      }
+      colEl.append(body)
+      return colEl
+    }))
+  const root = h('div', { class: 'vcRoot' },
+    h('div', { class: 'toolbar' },
+      h('span', { class: 'countQuiet' }, '按状态分列 · 按地图分泳道 · 点击卡片查看详情与自我图'),
+      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, '显示 ' + ISSUES.length + ' 个任务')),
+    board)
+  if (S.drawer && byId.get(S.drawer)) {
+    const i = byId.get(S.drawer)
+    const egoIds = [i.id, ...blockersOf(i.id), ...ISSUES.filter(x => blockersOf(x.id).includes(i.id)).map(x => x.id), i.parent, ...childrenOf(i.id)].filter(Boolean)
+    const g = graphSvg(egoIds, { dir: 'TB', focus: i.id })
+    const vw = Math.min(g.W, 470), vh = Math.min(g.H, 280)
+    g.svg.setAttribute('viewBox', `0 0 ${g.W} ${g.H}`)
+    g.svg.setAttribute('preserveAspectRatio', 'xMidYMin meet')
+    g.svg.style.width = '100%'
+    g.svg.style.height = vh + 'px'
+    root.append(
+      h('div', { class: 'drawerMask', onClick: () => { S.drawer = null; render() } }),
+      h('div', { class: 'drawer' },
+        h('button', { class: 'iconBtn', style: 'position:absolute;top:10px;right:10px', onClick: () => { S.drawer = null; render() } }, '✕'),
+        detailEl(i),
+        h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '自我图 · 1 跳'), h('div', { class: 'egoWrap' }, g.svg))))
+  }
+  return root
+}
+
+/* ================= switcher + demo panel ================= */
+function renderSwitcher() {
+  const keys = Object.keys(VARIANT_NAMES)
+  const cur = keys.indexOf(S.variant)
+  const go = d => { S.variant = keys[(cur + d + keys.length) % keys.length]; S.zoom = 1; S.panX = S.panY = 0; render() }
+  return h('div', { class: 'switcher' },
+    h('button', { onClick: () => go(-1), 'aria-label': '上一个变体' }, '←'),
+    h('span', { class: 'lbl' }, S.variant + ' — ' + VARIANT_NAMES[S.variant]),
+    h('button', { onClick: () => go(1), 'aria-label': '下一个变体' }, '→'))
+}
+function renderDemoPanel() {
+  return h('div', { class: 'demoPanel' },
+    h('label', {}, '深色主题', h('input', { type: 'checkbox', checked: S.dark, onChange: ev => { S.dark = ev.target.checked; render() } })),
+    h('label', {}, '数据状态', h('select', { onChange: ev => { S.dataState = ev.target.value; render() } },
+      h('option', { value: 'ok' }, '正常数据'),
+      h('option', { value: 'loading' }, '加载中'),
+      h('option', { value: 'empty' }, '空任务库'),
+      h('option', { value: 'nobd' }, 'bd 不可用'),
+      h('option', { value: 'nobeads' }, '无 .beads/'))))
+}
+
+/* keyboard variant cycling (not in inputs) */
+document.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '')) return
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+  const keys = Object.keys(VARIANT_NAMES)
+  S.variant = keys[(keys.indexOf(S.variant) + (e.key === 'ArrowRight' ? 1 : -1) + keys.length) % keys.length]
+  render()
+})
+
+render()
+</script>
+</body>
+</html>

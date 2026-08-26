@@ -1,0 +1,1215 @@
+<!doctype html>
+<!-- PROTOTYPE — throwaway UI study for wayfinder ticket dsh-01e.4 (bd panel UX).
+     Single self-contained file: real .beads/ data + real --dsw-* tokens embedded.
+     Three structurally different variants, switchable via the bottom bar or ←/→.
+     Build: node prototype/build.mjs regenerates bd-panel-ux.html from this template. -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beads 面板原型 · dsh-01e.4</title>
+<style>
+/* ===== real ui-theme design-platform.css (tokens, light + dark) ===== */
+/* Figma font-weight 510 (an SF Pro variable-font weight) always renders as
+   font-weight: 500 in this UI — non-variable webfonts snap intermediate
+   weights unpredictably across platforms. */
+body {
+  --dsw-static-amber-100: rgb(254, 245, 231);
+  --dsw-static-amber-400: rgb(247, 173, 49);
+  --dsw-static-amber-500: rgb(245, 158, 11);
+  --dsw-static-amber-600: rgb(221, 134, 41);
+  --dsw-static-amber-900: rgb(39, 36, 31);
+  --dsw-static-blue-100: rgb(219, 234, 254);
+  --dsw-static-blue-300: rgb(147, 197, 253);
+  --dsw-static-blue-400: rgb(96, 165, 250);
+  --dsw-static-blue-450: rgb(77, 147, 248);
+  --dsw-static-blue-500: rgb(59, 130, 246);
+  --dsw-static-blue-50: rgb(239, 246, 255);
+  --dsw-static-blue-50p: rgb(234, 243, 255);
+  --dsw-static-blue-600: rgb(37, 99, 235);
+  --dsw-static-blue-75: rgb(229, 240, 255);
+  --dsw-static-blue-800: rgb(30, 64, 175);
+  --dsw-static-blue-900: rgb(14, 48, 116);
+  --dsw-static-blue-950: rgb(23, 37, 84);
+  --dsw-static-deepseek-100: rgb(228, 237, 253);
+  --dsw-static-deepseek-200: rgb(211, 226, 255);
+  --dsw-static-deepseek-300: rgb(183, 200, 254);
+  --dsw-static-deepseek-400: rgb(103, 158, 254);
+  --dsw-static-deepseek-450: rgb(86, 134, 254);
+  --dsw-static-deepseek-500: rgb(65, 118, 230);
+  --dsw-static-deepseek-50: rgb(237, 243, 254);
+  --dsw-static-deepseek-600: rgb(72, 104, 178);
+  --dsw-static-deepseek-700-delete: rgb(47, 76, 143);
+  --dsw-static-deepseek-800: rgb(52, 65, 91);
+  --dsw-static-deepseek-900: rgb(40, 49, 66);
+  --dsw-static-green-100: rgb(230, 250, 237);
+  --dsw-static-green-400: rgb(78, 209, 126);
+  --dsw-static-green-500: rgb(34, 197, 94);
+  --dsw-static-green-900: rgb(35, 60, 44);
+  --dsw-static-neutral-00: rgb(255, 255, 255);
+  --dsw-static-neutral-1000: rgb(0, 0, 0);
+  --dsw-static-neutral-100: rgb(245, 245, 245);
+  --dsw-static-neutral-150: rgb(237, 237, 237);
+  --dsw-static-neutral-200: rgb(229, 229, 229);
+  --dsw-static-neutral-250: rgb(220, 220, 220);
+  --dsw-static-neutral-300: rgb(212, 212, 212);
+  --dsw-static-neutral-400: rgb(162, 164, 166);
+  --dsw-static-neutral-500: rgb(127, 130, 135);
+  --dsw-static-neutral-50: rgb(250, 250, 250);
+  --dsw-static-neutral-550: rgb(101, 103, 107);
+  --dsw-static-neutral-600: rgb(84, 85, 87);
+  --dsw-static-neutral-700: rgb(60, 60, 61);
+  --dsw-static-neutral-800: rgb(41, 41, 41);
+  --dsw-static-neutral-850: rgb(33, 33, 35);
+  --dsw-static-neutral-900: rgb(15, 15, 15);
+  --dsw-static-neutral-bluish-00: rgb(255, 255, 255);
+  --dsw-static-neutral-bluish-1000: rgb(15, 17, 21);
+  --dsw-static-neutral-bluish-100: rgb(235, 238, 242);
+  --dsw-static-neutral-bluish-150: rgb(233, 236, 242);
+  --dsw-static-neutral-bluish-200: rgb(225, 229, 238);
+  --dsw-static-neutral-bluish-300: rgb(207, 211, 214);
+  --dsw-static-neutral-bluish-400: rgb(173, 178, 184);
+  --dsw-static-neutral-bluish-500: rgb(151, 157, 166);
+  --dsw-static-neutral-bluish-50: rgb(249, 250, 251);
+  --dsw-static-neutral-bluish-600: rgb(129, 133, 140);
+  --dsw-static-neutral-bluish-60: rgb(245, 246, 247);
+  --dsw-static-neutral-bluish-700: rgb(97, 102, 107);
+  --dsw-static-neutral-bluish-750: rgb(67, 69, 74);
+  --dsw-static-neutral-bluish-75: rgb(241, 243, 245);
+  --dsw-static-neutral-bluish-800: rgb(53, 54, 56);
+  --dsw-static-neutral-bluish-850: rgb(44, 44, 46);
+  --dsw-static-neutral-bluish-875: rgb(35, 35, 36);
+  --dsw-static-neutral-bluish-900: rgb(27, 27, 28);
+  --dsw-static-neutral-bluish-950: rgb(21, 21, 23);
+  --dsw-static-red-100: rgb(254, 226, 226);
+  --dsw-static-red-400: rgb(242, 90, 90);
+  --dsw-static-red-500: rgb(239, 68, 68);
+  --dsw-static-red-50: rgb(254, 242, 242);
+  --dsw-static-red-600: rgb(236, 19, 19);
+  --dsw-static-red-900: rgb(87, 12, 12);
+}
+
+body[data-ds-dark-theme] {
+  --dsw-static-amber-100: rgb(254, 245, 231);
+  --dsw-static-amber-400: rgb(247, 173, 49);
+  --dsw-static-amber-500: rgb(245, 158, 11);
+  --dsw-static-amber-600: rgb(221, 134, 41);
+  --dsw-static-amber-900: rgb(39, 36, 31);
+  --dsw-static-blue-100: rgb(219, 234, 254);
+  --dsw-static-blue-300: rgb(147, 197, 253);
+  --dsw-static-blue-400: rgb(96, 165, 250);
+  --dsw-static-blue-450: rgb(77, 147, 248);
+  --dsw-static-blue-500: rgb(59, 130, 246);
+  --dsw-static-blue-50: rgb(239, 246, 255);
+  --dsw-static-blue-50p: rgb(234, 243, 255);
+  --dsw-static-blue-600: rgb(37, 99, 235);
+  --dsw-static-blue-75: rgb(229, 240, 255);
+  --dsw-static-blue-800: rgb(30, 64, 175);
+  --dsw-static-blue-900: rgb(14, 48, 116);
+  --dsw-static-blue-950: rgb(23, 37, 84);
+  --dsw-static-deepseek-100: rgb(228, 237, 253);
+  --dsw-static-deepseek-200: rgb(211, 226, 255);
+  --dsw-static-deepseek-300: rgb(183, 200, 254);
+  --dsw-static-deepseek-400: rgb(103, 158, 254);
+  --dsw-static-deepseek-450: rgb(86, 134, 254);
+  --dsw-static-deepseek-500: rgb(65, 118, 230);
+  --dsw-static-deepseek-50: rgb(237, 243, 254);
+  --dsw-static-deepseek-600: rgb(72, 104, 178);
+  --dsw-static-deepseek-700-delete: rgb(47, 76, 143);
+  --dsw-static-deepseek-800: rgb(52, 65, 91);
+  --dsw-static-deepseek-900: rgb(40, 49, 66);
+  --dsw-static-green-100: rgb(230, 250, 237);
+  --dsw-static-green-400: rgb(78, 209, 126);
+  --dsw-static-green-500: rgb(34, 197, 94);
+  --dsw-static-green-900: rgb(35, 60, 44);
+  --dsw-static-neutral-00: rgb(255, 255, 255);
+  --dsw-static-neutral-1000: rgb(0, 0, 0);
+  --dsw-static-neutral-100: rgb(245, 245, 245);
+  --dsw-static-neutral-150: rgb(237, 237, 237);
+  --dsw-static-neutral-200: rgb(229, 229, 229);
+  --dsw-static-neutral-250: rgb(220, 220, 220);
+  --dsw-static-neutral-300: rgb(212, 212, 212);
+  --dsw-static-neutral-400: rgb(162, 164, 166);
+  --dsw-static-neutral-500: rgb(127, 130, 135);
+  --dsw-static-neutral-50: rgb(250, 250, 250);
+  --dsw-static-neutral-550: rgb(101, 103, 107);
+  --dsw-static-neutral-600: rgb(84, 85, 87);
+  --dsw-static-neutral-700: rgb(60, 60, 61);
+  --dsw-static-neutral-800: rgb(41, 41, 41);
+  --dsw-static-neutral-850: rgb(33, 33, 35);
+  --dsw-static-neutral-900: rgb(15, 15, 15);
+  --dsw-static-neutral-bluish-00: rgb(255, 255, 255);
+  --dsw-static-neutral-bluish-1000: rgb(15, 17, 21);
+  --dsw-static-neutral-bluish-100: rgb(235, 238, 242);
+  --dsw-static-neutral-bluish-150: rgb(233, 236, 242);
+  --dsw-static-neutral-bluish-200: rgb(225, 229, 238);
+  --dsw-static-neutral-bluish-300: rgb(207, 211, 214);
+  --dsw-static-neutral-bluish-400: rgb(173, 178, 184);
+  --dsw-static-neutral-bluish-500: rgb(151, 157, 166);
+  --dsw-static-neutral-bluish-50: rgb(249, 250, 251);
+  --dsw-static-neutral-bluish-600: rgb(129, 133, 140);
+  --dsw-static-neutral-bluish-60: rgb(249, 250, 251);
+  --dsw-static-neutral-bluish-700: rgb(97, 102, 107);
+  --dsw-static-neutral-bluish-750: rgb(67, 69, 74);
+  --dsw-static-neutral-bluish-75: rgb(241, 243, 245);
+  --dsw-static-neutral-bluish-800: rgb(53, 54, 56);
+  --dsw-static-neutral-bluish-850: rgb(44, 44, 46);
+  --dsw-static-neutral-bluish-875: rgb(35, 35, 36);
+  --dsw-static-neutral-bluish-900: rgb(27, 27, 28);
+  --dsw-static-neutral-bluish-950: rgb(21, 21, 23);
+  --dsw-static-red-100: rgb(254, 226, 226);
+  --dsw-static-red-400: rgb(242, 90, 90);
+  --dsw-static-red-500: rgb(239, 68, 68);
+  --dsw-static-red-50: rgb(254, 242, 242);
+  --dsw-static-red-600: rgb(236, 19, 19);
+  --dsw-static-red-900: rgb(87, 12, 12);
+}
+
+body {
+  --dsw-alias-bg-base: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-bg-layer-1: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-bg-layer-2: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-bg-layer-3: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-bg-mask-1: rgba(0, 0, 0, 0.24);
+  --dsw-alias-bg-mask-2: rgba(0, 0, 0, 0.12);
+  --dsw-alias-bg-mask-3: rgba(0, 0, 0, 0.48);
+  --dsw-alias-bg-mask-photo: rgba(0, 0, 0, 0.88);
+  --dsw-alias-bg-mask-drop: rgba(255, 255, 255, 0.7);
+  --dsw-alias-bg-module-platform: var(--dsw-static-neutral-bluish-60);
+  --dsw-alias-bg-multi-select: var(--dsw-static-neutral-bluish-60);
+  --dsw-alias-bg-overlay: var(--dsw-static-neutral-bluish-150);
+  --dsw-alias-bg-skeleton: rgba(0, 0, 0, 0.04);
+  --dsw-alias-border-inverted2: rgba(0, 0, 0, 0);
+  --dsw-alias-border-inverted: rgba(0, 0, 0, 0);
+  --dsw-alias-border-l1: rgba(0, 0, 0, 0.04);
+  --dsw-alias-border-l2-darkmode-thin: rgba(0, 0, 0, 0.1);
+  --dsw-alias-border-l2: rgba(0, 0, 0, 0.1);
+  --dsw-alias-border-l3: rgba(0, 0, 0, 0.12);
+  --dsw-alias-border-l4: rgba(0, 0, 0, 0.16);
+  --dsw-alias-brand-primary-invert: var(--dsw-static-neutral-bluish-1000);
+  --dsw-alias-brand-primary-new-colorprimary-new-color: rgb(65, 118, 230);
+  --dsw-alias-brand-primary: var(--dsw-static-neutral-bluish-1000);
+  --dsw-alias-brand-text: var(--dsw-static-neutral-bluish-1000);
+  --dsw-alias-button-contrast-fill: var(--dsw-static-neutral-bluish-700);
+  --dsw-alias-button-elevated-fill: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-button-floating-fill: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-button-floating-hover: var(--dsw-static-neutral-bluish-75);
+  --dsw-alias-button-ghost-active-border: var(--dsw-static-neutral-bluish-500);
+  --dsw-alias-button-ghost-active-fill: var(--dsw-static-neutral-bluish-100);
+  --dsw-alias-button-ghost-active-hover: var(--dsw-static-neutral-bluish-150);
+  --dsw-alias-button-info-fill: var(--dsw-static-deepseek-500);
+  --dsw-alias-button-info-hover: var(--dsw-static-deepseek-400);
+  --dsw-alias-button-primary-dimmed: var(--dsw-static-neutral-bluish-100);
+  --dsw-alias-button-primary-fill: var(--dsw-alias-brand-primary);
+  --dsw-alias-button-primary-hover: var(--dsw-static-neutral-bluish-750);
+  --dsw-alias-button-tool-bar-fill-invisible: rgba(31, 31, 31, 0.36);
+  --dsw-alias-button-tool-bar-fill: rgba(84, 85, 87, 0.5);
+  --dsw-alias-button-tool-bar-hover: rgba(84, 85, 87, 0.6);
+  --dsw-alias-interactive-bg-active: rgba(38, 49, 72, 0.1);
+  --dsw-alias-interactive-bg-hover-accent: rgba(38, 49, 72, 0.14);
+  --dsw-alias-interactive-bg-hover-danger: rgba(236, 19, 19, 0.05);
+  --dsw-alias-interactive-bg-hover-solid: var(--dsw-static-neutral-bluish-75);
+  --dsw-alias-interactive-bg-hover: rgba(38, 49, 72, 0.06);
+  --dsw-alias-label-caption: var(--dsw-static-neutral-bluish-400);
+  --dsw-alias-label-dimmed: var(--dsw-static-neutral-bluish-200);
+  --dsw-alias-label-primary-bluish: var(--dsw-static-blue-900);
+  --dsw-alias-label-primary-dimmed: var(--dsw-static-neutral-bluish-950);
+  --dsw-alias-label-primary-foreground: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-label-primary-inverted: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-label-primary: var(--dsw-static-neutral-bluish-1000);
+  --dsw-alias-label-secondary: var(--dsw-static-neutral-bluish-700);
+  --dsw-alias-label-tertiary: var(--dsw-static-neutral-bluish-600);
+  --dsw-alias-markdown-citation: var(--dsw-static-neutral-bluish-100);
+  --dsw-alias-markdown-code-block-banner: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-markdown-code-block: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-markdown-code-segment-selected: var(--dsw-static-neutral-bluish-00);
+  --dsw-alias-markdown-code-segment-unselected: var(--dsw-static-neutral-bluish-75);
+  --dsw-alias-markdown-inline-code: var(--dsw-static-neutral-bluish-100);
+  --dsw-alias-markdown-placeholder: var(--dsw-static-neutral-bluish-60);
+  --dsw-alias-markdown-tag: var(--dsw-static-neutral-bluish-75);
+  --dsw-alias-scrollbar-bg-l1: var(--dsw-static-neutral-200);
+  --dsw-alias-scrollbar-bg-l2: var(--dsw-static-neutral-200);
+  --dsw-alias-scrollbar-hover-l1: var(--dsw-static-neutral-300);
+  --dsw-alias-scrollbar-hover-l2: var(--dsw-static-neutral-300);
+  --dsw-alias-state-business-primary: var(--dsw-static-deepseek-500);
+  --dsw-alias-state-business-tertiary: var(--dsw-static-deepseek-100);
+  --dsw-alias-state-error-primary: var(--dsw-static-red-600);
+  --dsw-alias-state-error-secondary: var(--dsw-static-red-400);
+  --dsw-alias-state-success-primary: var(--dsw-static-green-500);
+  --dsw-alias-state-success-secondary: var(--dsw-static-green-400);
+  --dsw-alias-state-success-tertiary: var(--dsw-static-green-100);
+  --dsw-alias-state-warn-label: var(--dsw-static-amber-600);
+  --dsw-alias-state-warn-primary: var(--dsw-static-amber-500);
+  --dsw-alias-state-warn-secondary: var(--dsw-static-amber-400);
+  --dsw-alias-state-warn-tertiary: var(--dsw-static-amber-100);
+  --dsw-alias-toast-bg: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-tooltip-bg: var(--dsw-static-neutral-bluish-850);
+  --dsw-specific-bubble-highlight: var(--dsw-static-deepseek-200);
+  --dsw-specific-bubble: var(--dsw-static-deepseek-50);
+  --dsw-specific-input-major: var(--dsw-static-neutral-bluish-00);
+  --dsw-specific-login-input: var(--dsw-static-neutral-bluish-50);
+  --dsw-specific-menu: var(--dsw-alias-bg-layer-3);
+  --dsw-specific-selector: var(--dsw-static-neutral-bluish-60);
+  --dsw-specific-sidebar-fill: var(--dsw-static-neutral-bluish-50);
+  --dsw-specific-sidebar-nav-item-active-accent: var(--dsw-static-deepseek-100);
+  --dsw-specific-sidebar-nav-item-active: var(--dsw-static-neutral-bluish-100);
+  --dsw-specific-sidebar-nav-item-hover: var(--dsw-static-neutral-bluish-75);
+  --dsw-specific-tip: var(--dsw-static-neutral-bluish-60);
+}
+
+body[data-ds-dark-theme] {
+  --dsw-alias-bg-base: var(--dsw-static-neutral-bluish-950);
+  --dsw-alias-bg-layer-1: var(--dsw-static-neutral-bluish-875);
+  --dsw-alias-bg-layer-2: var(--dsw-static-neutral-bluish-850);
+  --dsw-alias-bg-layer-3: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-bg-mask-1: rgba(0, 0, 0, 0.5);
+  --dsw-alias-bg-mask-2: rgba(0, 0, 0, 0.2);
+  --dsw-alias-bg-mask-3: rgba(0, 0, 0, 0.48);
+  --dsw-alias-bg-mask-photo: rgba(0, 0, 0, 0.88);
+  --dsw-alias-bg-mask-drop: rgba(39, 39, 48, 0.7);
+  --dsw-alias-bg-module-platform: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-bg-multi-select: var(--dsw-static-neutral-850);
+  --dsw-alias-bg-overlay: var(--dsw-static-neutral-bluish-700);
+  --dsw-alias-bg-skeleton: rgba(255, 255, 255, 0.08);
+  --dsw-alias-border-inverted2: rgba(255, 255, 255, 0.08);
+  --dsw-alias-border-inverted: rgba(255, 255, 255, 0.06);
+  --dsw-alias-border-l1: rgba(255, 255, 255, 0.06);
+  --dsw-alias-border-l2-darkmode-thin: rgba(255, 255, 255, 0.06);
+  --dsw-alias-border-l2: rgba(255, 255, 255, 0.12);
+  --dsw-alias-border-l3: rgba(255, 255, 255, 0.16);
+  --dsw-alias-border-l4: rgba(255, 255, 255, 0.2);
+  --dsw-alias-brand-primary-invert: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-brand-primary-new-colorprimary-new-color: var(--dsw-static-deepseek-450);
+  --dsw-alias-brand-primary: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-brand-text: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-button-contrast-fill: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-button-elevated-fill: var(--dsw-static-neutral-bluish-750);
+  --dsw-alias-button-floating-fill: var(--dsw-static-neutral-bluish-850);
+  --dsw-alias-button-floating-hover: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-button-ghost-active-border: var(--dsw-static-neutral-bluish-600);
+  --dsw-alias-button-ghost-active-fill: var(--dsw-static-neutral-bluish-750);
+  --dsw-alias-button-ghost-active-hover: var(--dsw-static-neutral-bluish-700);
+  --dsw-alias-button-info-fill: var(--dsw-static-deepseek-400);
+  --dsw-alias-button-info-hover: var(--dsw-static-deepseek-500);
+  --dsw-alias-button-primary-dimmed: var(--dsw-static-neutral-bluish-750);
+  --dsw-alias-button-primary-fill: var(--dsw-alias-brand-primary);
+  --dsw-alias-button-primary-hover: var(--dsw-static-neutral-bluish-100);
+  --dsw-alias-button-tool-bar-fill-invisible: rgba(31, 31, 31, 0.36);
+  --dsw-alias-button-tool-bar-fill: rgba(84, 85, 87, 0.5);
+  --dsw-alias-button-tool-bar-hover: rgba(84, 85, 87, 0.6);
+  --dsw-alias-interactive-bg-active: rgba(255, 255, 255, 0.14);
+  --dsw-alias-interactive-bg-hover-accent: rgba(255, 255, 255, 0.24);
+  --dsw-alias-interactive-bg-hover-danger: rgba(242, 90, 90, 0.15);
+  --dsw-alias-interactive-bg-hover-solid: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-interactive-bg-hover: rgba(255, 255, 255, 0.08);
+  --dsw-alias-label-caption: var(--dsw-static-neutral-bluish-600);
+  --dsw-alias-label-dimmed: var(--dsw-static-neutral-bluish-750);
+  --dsw-alias-label-primary-bluish: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-label-primary-dimmed: var(--dsw-static-neutral-bluish-100);
+  --dsw-alias-label-primary-foreground: var(--dsw-static-neutral-bluish-1000);
+  --dsw-alias-label-primary-inverted: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-label-primary: var(--dsw-static-neutral-bluish-50);
+  --dsw-alias-label-secondary: var(--dsw-static-neutral-bluish-300);
+  --dsw-alias-label-tertiary: var(--dsw-static-neutral-bluish-400);
+  --dsw-alias-markdown-citation: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-markdown-code-block-banner: var(--dsw-static-neutral-bluish-850);
+  --dsw-alias-markdown-code-block: var(--dsw-static-neutral-bluish-900);
+  --dsw-alias-markdown-code-segment-selected: var(--dsw-static-neutral-bluish-800);
+  --dsw-alias-markdown-code-segment-unselected: var(--dsw-static-neutral-bluish-900);
+  --dsw-alias-markdown-inline-code: var(--dsw-static-neutral-bluish-850);
+  --dsw-alias-markdown-placeholder: var(--dsw-static-neutral-bluish-850);
+  --dsw-alias-markdown-tag: var(--dsw-static-neutral-bluish-850);
+  --dsw-alias-scrollbar-bg-l1: var(--dsw-static-neutral-700);
+  --dsw-alias-scrollbar-bg-l2: var(--dsw-static-neutral-600);
+  --dsw-alias-scrollbar-hover-l1: var(--dsw-static-neutral-600);
+  --dsw-alias-scrollbar-hover-l2: var(--dsw-static-neutral-550);
+  --dsw-alias-state-business-primary: var(--dsw-static-deepseek-400);
+  --dsw-alias-state-business-tertiary: var(--dsw-static-deepseek-800);
+  --dsw-alias-state-error-primary: var(--dsw-static-red-400);
+  --dsw-alias-state-error-secondary: var(--dsw-static-red-400);
+  --dsw-alias-state-success-primary: var(--dsw-static-green-500);
+  --dsw-alias-state-success-secondary: var(--dsw-static-green-400);
+  --dsw-alias-state-success-tertiary: var(--dsw-static-green-900);
+  --dsw-alias-state-warn-label: var(--dsw-static-amber-600);
+  --dsw-alias-state-warn-primary: var(--dsw-static-amber-500);
+  --dsw-alias-state-warn-secondary: var(--dsw-static-amber-400);
+  --dsw-alias-state-warn-tertiary: var(--dsw-static-amber-900);
+  --dsw-alias-toast-bg: var(--dsw-static-neutral-bluish-750);
+  --dsw-alias-tooltip-bg: var(--dsw-static-neutral-bluish-750);
+  --dsw-specific-bubble-highlight: var(--dsw-static-neutral-bluish-750);
+  --dsw-specific-bubble: var(--dsw-static-neutral-bluish-850);
+  --dsw-specific-input-major: var(--dsw-static-neutral-bluish-850);
+  --dsw-specific-login-input: var(--dsw-static-neutral-bluish-900);
+  --dsw-specific-menu: var(--dsw-alias-bg-layer-3);
+  --dsw-specific-selector: var(--dsw-static-neutral-bluish-800);
+  --dsw-specific-sidebar-fill: var(--dsw-static-neutral-bluish-900);
+  --dsw-specific-sidebar-nav-item-active-accent: var(--dsw-static-neutral-bluish-800);
+  --dsw-specific-sidebar-nav-item-active: var(--dsw-static-neutral-bluish-750);
+  --dsw-specific-sidebar-nav-item-hover: var(--dsw-static-neutral-bluish-850);
+  --dsw-specific-tip: var(--dsw-static-neutral-bluish-800);
+}
+
+/* ===== real ui-theme base.css (font stacks) ===== */
+/* Base variables referenced by the token sheets and component CSS but defined
+ * upstream (deepsuite theme/global.css) — supplied here so the composite
+ * --dsw-font-* variables resolve and motion rides the upstream curve. Code
+ * font stack deliberately omits a bare `monospace` tail (Windows CJK falls
+ * back to SimSun otherwise). */
+:root {
+  --dsw-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --ds-font-family-code: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas,
+    'Liberation Mono', Menlo, Courier, 'PingFang SC', 'Microsoft YaHei';
+  --ds-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-transition-duration: 0.2s;
+  --ds-transition-duration-fast: 0.1s;
+  --ds-transition-duration-slow: 0.3s;
+}
+
+</style>
+<style>
+/* ============ prototype app chrome (mimics the real conversation column) ============ */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--dsw-font-family);
+  font-size: var(--dsw-font-s-14);
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-base);
+  overflow: hidden;
+}
+#app { display: flex; flex-direction: column; height: 100%; }
+:root {
+  --gstat-frontier: var(--dsw-static-green-500);
+  --gstat-progress: var(--dsw-alias-state-business-primary);
+  --gstat-blocked: var(--dsw-static-amber-500);
+  --gstat-closed: var(--dsw-alias-label-dimmed);
+  --gedge: var(--dsw-static-neutral-400);
+}
+
+/* header row + tab strip — mirrors ConversationRoot .tabs/.tab (13/16 wt500, gap 36, 2px bar) */
+.shellHeader { flex: none; padding: 18px 24px 0; }
+.shellCrumb { font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-caption); padding: 0 0 0 8px; }
+.tabs { position: relative; z-index: 1; display: flex; gap: 36px; margin-top: 4px; padding-left: 8px; border-bottom: 1px solid var(--dsw-alias-border-l2); }
+.tab {
+  position: relative; padding: 0 0 11px; border: none; background: transparent;
+  font-size: 13px; line-height: 16px; font-weight: 500;
+  color: var(--dsw-alias-label-tertiary); cursor: pointer;
+}
+.tab::after { content: ''; position: absolute; right: 0; bottom: 1px; left: 0; height: 2px; border-radius: 2px; background: transparent; }
+.tabActive { color: var(--dsw-alias-state-business-primary); }
+.tabActive::after { background: var(--dsw-alias-state-business-primary); }
+.tabDisabled { color: var(--dsw-alias-label-dimmed); cursor: not-allowed; }
+.tabDisabled:hover .tabTip { display: block; }
+.tabTip {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+  white-space: nowrap; padding: 6px 10px; border-radius: 6px;
+  background: var(--dsw-alias-label-primary); color: var(--dsw-alias-label-primary-foreground);
+  font-size: var(--dsw-font-xxs-12); font-weight: 400;
+  box-shadow: var(--dsw-shadow-lv2);
+}
+.viewArea { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+
+/* ============ shared primitives ============ */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px;
+  border-radius: 5px; font-size: var(--dsw-font-xxxs-11); line-height: 1;
+  background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-secondary);
+}
+.chipAttn { background: var(--dsw-static-amber-100); color: var(--dsw-static-amber-600); }
+.chipType { background: transparent; border: 1px solid var(--dsw-alias-border-l2); }
+.prio { font-size: var(--dsw-font-xxxs-11); font-weight: 600; color: var(--dsw-alias-label-caption); }
+.prioHot { color: var(--dsw-static-amber-600); }
+.mono { font-family: var(--ds-font-family-code); font-size: 11px; }
+.muted { color: var(--dsw-alias-label-tertiary); }
+.dim { color: var(--dsw-alias-label-caption); }
+.statDot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.st-open { background: var(--dsw-alias-label-caption); }
+.st-frontier { background: var(--dsw-static-green-500); }
+.st-progress { background: var(--dsw-alias-state-business-primary); }
+.st-blocked { background: var(--dsw-static-amber-500); }
+.st-closed { background: var(--dsw-alias-label-dimmed); }
+.iconBtn {
+  border: none; background: transparent; cursor: pointer; color: var(--dsw-alias-label-tertiary);
+  font-size: 13px; padding: 4px 6px; border-radius: 6px; line-height: 1;
+}
+.iconBtn:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); }
+.btn {
+  border: none; cursor: pointer; border-radius: 7px; padding: 6px 14px;
+  font-size: var(--dsw-font-xs-13); font-weight: 500;
+  background: var(--dsw-alias-button-info-fill); color: #fff;
+}
+.btn:hover { background: var(--dsw-alias-button-info-hover); }
+.btnGhost { background: transparent; color: var(--dsw-alias-label-secondary); border: 1px solid var(--dsw-alias-border-l2); }
+.btnGhost:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.segment { display: inline-flex; padding: 2px; gap: 2px; border-radius: 8px; background: var(--dsw-alias-interactive-bg-hover); }
+.segment button {
+  border: none; background: transparent; cursor: pointer; border-radius: 6px;
+  padding: 4px 12px; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-tertiary);
+}
+.segment button.on { background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: var(--dsw-shadow-lv1); }
+.toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 24px; flex: none; }
+.searchBox {
+  flex: none; width: 220px; height: 30px; border-radius: 7px; border: 1px solid var(--dsw-alias-border-l2);
+  background: transparent; padding: 0 10px; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-primary);
+}
+.searchBox::placeholder { color: var(--dsw-alias-label-caption); }
+.mapChip {
+  border: 1px solid var(--dsw-alias-border-l2); background: transparent; cursor: pointer;
+  border-radius: 14px; padding: 3px 11px; font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-secondary);
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mapChip.on { border-color: var(--dsw-alias-state-business-primary); color: var(--dsw-alias-state-business-primary); background: var(--dsw-alias-interactive-bg-hover); }
+.countQuiet { color: var(--dsw-alias-label-caption); font-size: var(--dsw-font-xxxs-11); }
+
+/* states */
+.stateWrap { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: var(--dsw-alias-label-tertiary); }
+.stateWrap .big { font-size: var(--dsw-font-m-18); color: var(--dsw-alias-label-secondary); }
+.stateWrap .hint { font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-caption); max-width: 420px; text-align: center; line-height: 20px; }
+.errBanner {
+  margin: 16px 24px; padding: 14px 16px; border-radius: 10px;
+  background: var(--dsw-static-amber-100); color: var(--dsw-static-amber-900);
+  font-size: var(--dsw-font-xs-13); display: flex; align-items: center; gap: 12px;
+}
+.skel { margin: 14px 24px; }
+.skelRow { height: 52px; border-radius: 9px; margin-bottom: 10px; background: var(--dsw-alias-bg-skeleton); animation: skelPulse 1.2s ease-in-out infinite; }
+@keyframes skelPulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* ============ variant A: 双栏工作台 ============ */
+.vaRoot { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.vaBody { display: flex; flex: 1; min-height: 0; }
+.vaList { width: 430px; flex: none; border-right: 1px solid var(--dsw-alias-border-l2); overflow-y: auto; padding: 4px 0 24px; }
+.vaDetail { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 28px 40px; }
+.groupHead {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px 6px; background: var(--dsw-alias-bg-base);
+  font-size: var(--dsw-font-xxs-12); font-weight: 600; color: var(--dsw-alias-label-secondary);
+  cursor: pointer; user-select: none; border: none; width: 100%; text-align: left;
+}
+.groupHead .gt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.groupHead .caret { transition: transform .15s; color: var(--dsw-alias-label-caption); font-size: 10px; }
+.groupHead.closed .caret { transform: rotate(-90deg); }
+.subHead { display: flex; align-items: center; gap: 6px; padding: 8px 20px 4px; font-size: var(--dsw-font-xxxs-11); font-weight: 600; color: var(--dsw-alias-label-caption); letter-spacing: .3px; }
+.subHead .n { font-weight: 400; }
+.subHead.asBtn { cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: inherit; }
+.row {
+  display: flex; align-items: flex-start; gap: 9px; width: 100%; text-align: left; cursor: pointer;
+  border: none; background: transparent; padding: 7px 20px; border-radius: 0; font-family: inherit;
+}
+.row:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.rowSel { background: var(--dsw-alias-interactive-bg-active); box-shadow: inset 2px 0 0 var(--dsw-alias-state-business-primary); }
+.rowMain { flex: 1; min-width: 0; }
+.rowTitle { font-size: var(--dsw-font-xs-13); line-height: 19px; color: var(--dsw-alias-label-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rowMeta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.rowClosed .rowTitle { color: var(--dsw-alias-label-tertiary); text-decoration: line-through; text-decoration-color: var(--dsw-alias-border-l3); }
+.vaGraphPane { flex: 1; min-width: 0; display: flex; }
+.vaGraphPane .vaDetail { border-left: 1px solid var(--dsw-alias-border-l2); width: 400px; flex: none; }
+
+/* detail */
+.dtHead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dtTitle { font-size: var(--dsw-font-l-20); font-weight: 500; line-height: 28px; margin: 0; flex: 1; min-width: 260px; }
+.dtMeta { display: flex; gap: 22px; flex-wrap: wrap; margin: 12px 0 4px; padding: 12px 0; border-top: 1px solid var(--dsw-alias-border-l1); border-bottom: 1px solid var(--dsw-alias-border-l1); }
+.dtMetaItem { display: flex; flex-direction: column; gap: 3px; }
+.dtMetaK { font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); }
+.dtMetaV { font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-secondary); display: flex; align-items: center; gap: 6px; }
+.dtSection { margin: 20px 0 0; }
+.dtSectionH { font-size: var(--dsw-font-xxs-12); font-weight: 600; color: var(--dsw-alias-label-secondary); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.depRow { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 7px; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-secondary); font-family: inherit; }
+.depRow:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.depRow .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dsw-alias-label-primary); }
+.md { font-size: var(--dsw-font-xs-13); line-height: 21px; color: var(--dsw-alias-label-secondary); max-width: 76ch; }
+.md h2 { font-size: var(--dsw-font-s-strong-14); color: var(--dsw-alias-label-primary); margin: 18px 0 6px; }
+.md h3 { font-size: var(--dsw-font-xs-strong-13); color: var(--dsw-alias-label-primary); margin: 14px 0 4px; }
+.md code { font-family: var(--ds-font-family-code); font-size: 12px; background: var(--dsw-alias-markdown-inline-code); border-radius: 4px; padding: 1px 5px; }
+.md ul { margin: 4px 0; padding: 0; list-style: none; }
+.md li { margin: 2px 0; display: flex; gap: 8px; }
+.md li::before { content: '·'; color: var(--dsw-alias-label-caption); }
+.md p { margin: 6px 0; }
+.comment { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--dsw-alias-border-l1); }
+.avatar { width: 24px; height: 24px; border-radius: 50%; flex: none; background: var(--dsw-alias-interactive-bg-hover-accent); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--dsw-alias-label-secondary); }
+.cHead { display: flex; gap: 8px; align-items: baseline; font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); }
+.cAuthor { color: var(--dsw-alias-label-secondary); font-weight: 500; }
+.cBody { font-size: var(--dsw-font-xs-13); line-height: 20px; color: var(--dsw-alias-label-secondary); margin-top: 3px; white-space: pre-wrap; }
+.noteBlock { border-left: 2px solid var(--dsw-alias-border-l3); padding: 2px 0 2px 12px; font-size: var(--dsw-font-xs-13); color: var(--dsw-alias-label-tertiary); }
+
+/* ============ graph (shared SVG) ============ */
+.graphWrap { flex: 1; min-width: 0; position: relative; overflow: hidden; }
+.graphSvg { width: 100%; height: 100%; display: block; cursor: grab; }
+.graphSvg.panning { cursor: grabbing; }
+.gNode { cursor: pointer; }
+.gNode rect.box { fill: var(--dsw-alias-bg-layer-1); stroke: var(--dsw-alias-border-l3); }
+.gNode.mapNode rect.box { fill: var(--dsw-alias-interactive-bg-hover); }
+.gNode.sel rect.box { stroke: var(--dsw-alias-state-business-primary); stroke-width: 1.6; }
+.gNode:hover rect.box { stroke: var(--dsw-alias-state-business-primary); }
+.gNode text { font-size: 11px; fill: var(--dsw-alias-label-secondary); }
+.gNode .id { font-family: var(--ds-font-family-code); font-size: 9.5px; fill: var(--dsw-alias-label-caption); }
+.gNode .title { fill: var(--dsw-alias-label-primary); font-weight: 500; }
+.gNode.dimmed { opacity: .3; }
+.gEdge { fill: none; stroke: var(--gedge); stroke-width: 1.4; }
+.gEdge.pc { stroke-dasharray: 3 4; stroke-width: 1.2; }
+.gEdge.hi { stroke: var(--dsw-alias-state-business-primary); stroke-width: 1.8; }
+.legend {
+  position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 5px;
+  padding: 9px 12px; border-radius: 9px; background: var(--dsw-alias-bg-layer-1);
+  border: 1px solid var(--dsw-alias-border-l2); box-shadow: var(--dsw-shadow-lv1);
+  font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-tertiary);
+}
+.legend div { display: flex; align-items: center; gap: 7px; }
+.graphHint { position: absolute; right: 12px; top: 10px; font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); }
+
+/* ============ variant B: 画布优先 ============ */
+.vbRoot { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.vbCanvas { flex: 1; min-height: 0; position: relative; }
+.vbQueue { flex: none; border-top: 1px solid var(--dsw-alias-border-l2); padding: 8px 16px 10px; display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+.vbQueueH { font-size: var(--dsw-font-xxxs-11); font-weight: 600; color: var(--dsw-alias-label-caption); flex: none; letter-spacing: .3px; }
+.qChip {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  border: 1px solid var(--dsw-alias-border-l2); background: transparent; border-radius: 15px;
+  padding: 4px 12px; font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-secondary); max-width: 300px; font-family: inherit;
+}
+.qChip .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qChip:hover, .qChip.on { border-color: var(--dsw-alias-state-business-primary); color: var(--dsw-alias-state-business-primary); }
+.vbDetailCard {
+  position: absolute; top: 12px; right: 12px; bottom: 12px; width: 400px; z-index: 5;
+  border-radius: 12px; background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l2);
+  box-shadow: var(--dsw-shadow-lv3); overflow-y: auto; padding: 16px 20px 28px;
+}
+.vbDetailClose { position: absolute; top: 10px; right: 10px; }
+
+/* ============ variant C: 泳道看板 ============ */
+.vcRoot { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.vcBoard { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); overflow-x: auto; }
+.vcCol { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--dsw-alias-border-l1); }
+.vcColHead { flex: none; display: flex; align-items: center; gap: 7px; padding: 10px 14px 6px; font-size: var(--dsw-font-xxs-12); font-weight: 600; color: var(--dsw-alias-label-secondary); }
+.vcColBody { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+.laneHead { flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 6px 0; font-size: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-caption); max-width: 100%; }
+.laneHead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card {
+  text-align: left; cursor: pointer; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px;
+  background: var(--dsw-alias-bg-layer-1); padding: 9px 11px; display: flex; flex-direction: column; gap: 6px; font-family: inherit;
+}
+.card:hover { border-color: var(--dsw-alias-state-business-primary); }
+.cardTitle { font-size: var(--dsw-font-xs-13); line-height: 18px; color: var(--dsw-alias-label-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cardMeta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.drawerMask { position: fixed; inset: 0; z-index: 20; background: var(--dsw-alias-bg-mask-2); }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 21; width: 540px; max-width: 92vw;
+  background: var(--dsw-alias-bg-base); border-left: 1px solid var(--dsw-alias-border-l2);
+  box-shadow: var(--dsw-shadow-lv3); overflow-y: auto; padding: 20px 26px 40px;
+}
+.egoWrap { border: 1px solid var(--dsw-alias-border-l1); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); padding: 6px; }
+
+/* ============ prototype switcher + demo panel ============ */
+.switcher {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 50;
+  display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 999px;
+  background: #1d2129; color: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.28); font-size: 13px; user-select: none;
+}
+.switcher .lbl { padding: 0 10px; font-weight: 600; letter-spacing: .2px; }
+.switcher button { border: none; background: rgba(255,255,255,.12); color: #fff; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
+.switcher button:hover { background: rgba(255,255,255,.24); }
+.demoPanel {
+  position: fixed; right: 14px; top: 12px; z-index: 50; display: flex; flex-direction: column; gap: 7px;
+  padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--dsw-alias-border-l3);
+  background: var(--dsw-alias-bg-layer-1); font-size: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-tertiary);
+}
+.demoPanel label { display: flex; align-items: center; gap: 6px; }
+.demoPanel select { font-size: var(--dsw-font-xxs-12); border-radius: 6px; border: 1px solid var(--dsw-alias-border-l2); background: transparent; color: var(--dsw-alias-label-secondary); padding: 2px 4px; }
+.protoBadge {
+  position: fixed; left: 12px; bottom: 14px; z-index: 50; font-size: 10px; letter-spacing: .8px;
+  color: var(--dsw-alias-label-dimmed); border: 1px dashed var(--dsw-alias-border-l3); border-radius: 5px; padding: 3px 7px;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="protoBadge">PROTOTYPE · dsh-01e.4 · throwaway</div>
+<script type="application/json" id="bd-data">{"generatedAt":"2026-08-26T09:47:05.274Z","issues":[{"id":"dsh-01e","title":"Wayfinder: bd (beads) task viewer and dependency graph panel in the DSH web GUI","description":"## Destination\n\nA read-only bd (beads) viewer living as a Beads tab in the DSH web GUI's conversation view ring (Chat / Trajectory / Beads): a wayfinder-aware task list plus a dependency-graph view over the session repo's `.beads/` store, live-updating, landed in the working tree and verified at :3080 (dsh-desktop inherits it for free — it wraps the same web GUI). Execution is carried inside the map: once the route clears (data channel, slot integration, prototype reacted to), execution tickets graduate and the map closes only when the panel is done, not when the spec is written.\n\n## Notes\n\n**Surfaces.** Target: this repo — apps/web + packages/client (web GUI at :3080/:3081). dsh-desktop (~/pets/harnesses-ai/ya-ow/dsh-desktop) is a Tauri shell over `dsh web` with zero harness changes, so the web panel reaches it with no extra work; still, the host bd reader stays surface-neutral (plain host service, no web-specifics).\n\n**Tracker facts (researched at charting).** bd v1.2.2, embedded Dolt in `.beads/`; official guidance: tools read via the `bd --json` CLI, never the store directly. `bd list --all --json -n 0` returns full issue objects with inline `dependencies[]`/`parent` (~0.31 s for 27 issues, flat cost) — default limit 50, always pass `-n 0`; comment bodies only via `bd show --json --include-comments` per issue. `bd graph` renders layered DAG views (terminal / `--box` / `--compact` / `--dot` Graphviz / `--html` self-contained D3) — display formats, not structured data. Liveness: no machine-facing watch API; community pattern = fs.watch `.beads/last-touched` + cheap digest poll, full refetch on change.\n\n**Panel prior art (researched at charting).** OpenWorker RightRail (`surfaces/gui/src/components/RightRail.tsx`): fixed 332px overlay rail, accordion sections collapsed by default, count chips with amber attention (blocked on top), persisted visibility + transient deep links, two-width mode (inspector <-> reading panel), event-driven refetch coalesced via one refreshKey. Geometry is moot after the tab redirect (dsh-01e.3); the content patterns (accordion, attention chips, refetch coalescing) carry over to the list view.\n\n**Skills.** Grilling tickets: /grilling + /domain-modeling. Prototype tickets: /prototype. Research tickets: /research subagents; findings land on throwaway research/ branches in this repo.\n\n**Standing decisions from charting.**\n\n1. Read-only viewer: no claim/close/comment/create from the GUI in this effort.\n2. Agent-facing bd tools (model-visible) are out; the agent keeps driving bd via shell per AGENTS.md.\n3. Panel direction (redirected at the slot ticket, dsh-01e.3): a 'beads' entry in the existing `conversation.view` ring (id `beads`, order 20 after chat=0/trajectory=10) — no fourth column; AppFrame/columns/layout stores untouched. Grey non-clickable tab without `.beads/` (probe-gated, default grey, auto-return to Chat on mid-session loss).\n4. Store shown = the session repo's `.beads/` (session cwd); sessions without one show an empty state. No global path config in v1.\n5. MVP graph views: wayfinder-map subtree + per-ticket ego graph. Full-store mega-graph is not MVP.\n6. Wayfinder-aware presentation (frontier from `bd ready` semantics, blocked-on-top, wayfinder:* labels), zero wayfinder-specific actions.\n7. Build on semantic --dsw-* alias tokens; dsh-ood re-points them to the OpenWorker palette later — no hard dependency on that map.\n\n**DSH rules that bind every ticket.** Client UI lives as slot plugins under packages/client (one UI feature = one plugin package; CSS Modules + shared tokens; Chinese product copy); host services follow the capability-seam and registration-as-effect rules (packages/AGENTS.md); verifying at :3080 requires rebuilding web artifacts.\n\n## Not yet specified\n\n• Execution rollout tickets (host reader package, client panel package, tests + DSH_SNAPSHOT replay, README/docs, i18n copy) — graduate once the reader, slot, and prototype tickets close.\n• Acceptance criteria per view (list vs graph) — waits for the prototype.\n\n## Out of scope\n\n• Mutations from the GUI (claim/close/comment/label/dep) — a future effort once read-only lands.\n• Agent-facing bd tools and bd prime/remember prompt injection — separate effort.\n• dsh-desktop-specific work — it wraps the web GUI unchanged; nothing to build there for this map.\n• Full-store dependency mega-graph — revisit as its own effort if the subtree view proves insufficient.\n• OpenWorker visual-language port (dsh-ood) and automations/inbox/MCP (dsh-t28) — their maps own those.","notes":"• Graph rendering choice (dsh-01e.1) — @dagrejs/dagre v3 (48.6 KB ESM) as the layout dependency with our own React SVG rendering; elkjs/cytoscape/xyflow rejected on size/ESM/canvas grounds; fallback d3-dag then hand-rolled. Findings: research/bd-graph-layout/research-notes/bd-graph-layout.md\n• bd reader contract (dsh-01e.2) — bd list --all --json -n 0 is the canonical source (+ per-issue bd show --include-comments on selection); one host plugin service (cwd-scoped) + client package, no seam split; v1 liveness = client pull-poll 5s gated by panel visibility, fs.watch+push deferred; Config = bdBinary + pollIntervalMs; error/empty states per failure mode.\n- Panel slot and column integration in AppFrame (dsh-01e.3) — redirected: not a fourth column; one 'beads' entry (order 20) in the existing conversation.view ring via the ui-trajectory registration pattern; grey non-clickable tab without .beads/ (probe on session attach, default grey, auto-return to Chat on mid-session loss, ViewTab.disabled contract extension); package @deepseek-ai/dsh-client-ui-beads; blank-session-only coverage accepted.","status":"open","priority":1,"issue_type":"epic","owner":"kostrovsd@gmail.com","created_at":"2026-08-26T00:59:00Z","created_by":"Sereja","updated_at":"2026-08-26T09:09:01Z","labels":["wayfinder:map"],"dependency_count":0,"dependent_count":0,"comment_count":0},{"id":"dsh-ood.3","title":"Theme mechanics and Geist self-hosting path in DSH","description":"## Question\n\nHow does a theme preference become painted pixels in DSH, and what does Geist self-hosting take?\n\n1. Trace the theme flow: boot-theme.ts early application, the data-ds-dark-theme attribute, theme-settings persistence (light/dark/system), AppearanceRow — what a restyled design-platform.css must preserve for all three preferences to keep working.\n2. Geist + Geist Mono self-hosting through the apps/web Vite build: where woff2 assets go, @font-face strategy (weights 400/500/600 + mono), font-display, fallback stack, and how packages/client (not just apps/web) reference the fonts.\n3. Where styles bypass the token layer today: inline styles, hardcoded hex/rgb in CSS Modules, JS-driven colors — a list the mapping ticket will have to rule on.\n4. How the built artifacts verify at 127.0.0.1:3080 (rebuild commands, dev:web watch) so later tickets can screenshot-audit.\n\n## Context\n\n- packages/client/ui-theme: boot-theme.ts, theme-settings.ts, invariant.ts, styles/*.css, client/AppearanceRow.tsx + settings-store.ts.\n- dist/assets currently ships KaTeX fonts — the font pipeline precedent to follow.\n- Findings land on branch research/dsh-theme-mechanics; the resolution comment links the file.\n","status":"closed","priority":1,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:51Z","created_by":"Sereja","updated_at":"2026-08-25T22:31:53Z","started_at":"2026-08-25T22:27:58Z","closed_at":"2026-08-25T22:31:53Z","close_reason":"Closed","labels":["wayfinder:map","wayfinder:research"],"dependencies":[{"issue_id":"dsh-ood.3","depends_on_id":"dsh-ood","type":"parent-child","created_at":"2026-08-26T01:27:50Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":1,"parent":"dsh-ood"},{"id":"dsh-ood.2","title":"OpenWorker design system extracted as an OW-to-DSH token mapping draft","description":"## Question\n\nWhat exact token set does the OpenWorker design language define, and how does it map onto the DSH token scale? Deliver a draft OW→DSH mapping table:\n\n1. Extract the canonical tokens from DESIGN.md (light + dark): palette roles (Paper, Panel White, Ink, Muted Slate, Faint Steel, Hairline/Strong, Work Cobalt, Signal Green/Amber/Red, Deep Teal + soft/line variants), the Geist type scale (sizes/weights/tracking per role), radii, hairline/border rules, shadows, badge soft-tint recipe, motion notes.\n2. Cross-check against the implementation: surfaces/gui tailwind.config.js, src/styles.css, src/tailwind.css — where code diverges from DESIGN.md, DESIGN.md wins but note it.\n3. Map every token onto the --dsw-static-* scale: which DSH vars each OW token replaces, which OW tokens need NEW DSH vars, and what dies (--dsw-static-blue-*, deepseek-*, neutral-bluish duplicates?) under the single-accent canon.\n4. Flag semantic mismatches: places where DSH uses blue/deepseek for meaning (links, selection, focus) that OW expresses via Cobalt or badges.\n\n## Context\n\n- DESIGN.md at the openworker repo root is the single source of truth; its banned list (Inter, serifs, letter-spaced lowercase) applies.\n- ui-mocks/*.html are visual references for the table's intended result.\n- Findings land on branch research/ow-design-extract; the resolution comment links the file.\n","status":"closed","priority":1,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:50Z","created_by":"Sereja","updated_at":"2026-08-25T22:30:21Z","started_at":"2026-08-25T22:27:58Z","closed_at":"2026-08-25T22:30:21Z","close_reason":"Closed","labels":["wayfinder:map","wayfinder:research"],"dependencies":[{"issue_id":"dsh-ood.2","depends_on_id":"dsh-ood","type":"parent-child","created_at":"2026-08-26T01:27:50Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":1,"parent":"dsh-ood"},{"id":"dsh-ood","title":"Wayfinder: port the OpenWorker design language into the DSH web GUI","description":"## Destination\n\nThe DSH web GUI (127.0.0.1:3080, apps/web + packages/client) restyled in the OpenWorker design language — the full system from openworker's DESIGN.md: palette (Paper / Panel White / Ink, Zinc neutrals, single Work Cobalt accent), Geist + Geist Mono typography, 1px hairlines, soft-tinted status badges, token-for-token light and dark themes, plus Cockpit-density/layout patterns on the key surfaces — **landed in the working tree and verified visually at :3080 in both themes**. Execution is carried inside the map (2026-08-26 redraw): once the route clears (token mapping locked, patterns assigned, prototype reacted to), rollout tickets graduate and the map closes only when the port is done, not when the spec is written.\n\n## Notes\n\n**Repos.** Design source: /Users/sergeykostrov/pets/harnesses-ai/ya-ow/openworker (DESIGN.md is the canonical spec; surfaces/gui = Tauri + React + Tailwind implementation, 63 components; ui-mocks/*.html = visual references). Target: this repo — apps/web Vite entry + packages/client (esp. ui-theme: design-platform.css with --dsw-static-* tokens, AppearanceRow light/dark/system switcher).\n\n**Related effort.** dsh-t28 \"Wayfinder: port automations, inbox, and MCP from openworker into DSH\" ports openworker *features*; this map ports the *design language* only. Screens that effort builds will consume the same tokens.\n\n**Skills.** Grilling tickets: /grilling + /domain-modeling. Prototype tickets: /prototype. Research tickets: /research subagents; findings land on throwaway research/ branches in this repo.\n\n**Standing decisions from charting.**\n\n1. Scope: the web GUI only (:3080). dsh-desktop, CLI/TUI are out.\n2. Full design logic including density, applied two-tier: tokens / typography / component styling everywhere; Cockpit density + split-layout patterns only on key surfaces (shell, chat transcript, sidebars, settings), avoiding DOM restructuring where possible.\n3. Both themes, token-for-token mirror of DESIGN.md; the existing light/dark/system switcher keeps working.\n4. *(Redrawn 2026-08-26)* Upstream divergence is accepted: the fork practically never merges deepseek-ai/deepseek-harness, so every decision favors result quality over invasiveness.\n5. Geist + Geist Mono self-hosted (woff2, OFL license).\n6. Pure OW canon: Work Cobalt is the only accent; --dsw-static-blue-* / deepseek-* scales retire from the UI (logo moments excepted if unavoidable).\n7. Rollout: incremental landed series (foundation → components → density → verification), every step buildable and verifiable at :3080.\n8. Done bar: side-by-side screenshot audit of key surfaces vs OW mocks, in light and dark — plus the port actually running at :3080.\n\n**DSH rules that bind every ticket.** Client UI lives as slot plugins under packages/client with CSS Modules + shared tokens; apps/web is a thin Vite entry, not a standalone app. Verifying at :3080 requires rebuilding web artifacts; client-plugin changes hot-reload only while pnpm run dev:web runs.\n\n## Decisions so far\n\n• Web-GUI surface inventory: what restyling touches /dsh-ood.1 — 25 styled packages, 106 CSS modules / 16.3k LOC over the ui-theme token layer; alias refs 1321× vs 12 direct static refs, ~40 hardcoded literals; ≈80–90% of the visual surface is token-reachable. Findings: research/dsh-ui-inventory → research-notes/dsh-ui-inventory.md.\n• OpenWorker design system extracted as an OW-to-DSH token mapping draft /dsh-ood.2 — 21 color tokens/theme + Geist scale + radii/hairlines/badge recipe/motion; ~35 new --dsw-static-* vars (typography/radius/shadow/motion layers are new); blue-*/deepseek-*/duplicate gray ramps die; blue-for-meaning collapses to single Work Cobalt. Findings: research/ow-design-extract → research-notes/ow-design-extract.md.\n• Theme mechanics and Geist self-hosting path in DSH /dsh-ood.3 — dark keyed by data-ds-dark-theme on body (pre-paint inline script, then ThemePresenter); restyle must keep the body{}/body[data-ds-dark-theme]{} pair and --dsw-* names; Geist follows the KaTeX precedent (woff2 in ui-theme styles/fonts, plain CSS side-effect import; existing FONT_EXTENSIONS pipeline emits hashed assets); 12-entry token-bypass list for the mapping to rule on. Findings: research/dsh-theme-mechanics → research-notes/dsh-theme-mechanics.md.\n• Lock the OW-to-DSH token mapping /dsh-ood.4 — DESIGN.md is canon where OW's implementation diverges (Cobalt #2E62D6/#8CAAF2, Muted #5B616B, Faint #9AA1AA); blue-*/deepseek-*/dup-gray ramps die in ONE stroke onto a single OW-anchored Zinc ramp with the alias layer re-pointed atomically; status = ink/soft/line quads (ok/warn/danger/teal) both themes; 7 composite --dsw-static-text-* steps + radius 8/14/9999 + float-only shadow + motion vars; assistant bubbles = neutral solid (#E9EBF0/#2E3138), Cobalt never a large fill; the 12 token-bypass sites deliberately NOT touched here — deferred to a post-prototype cleanup pass.\n• Prototype: key surfaces restyled in OW language /dsh-ood.5 — human took the max variant: locked mapping + Geist + density probe («ок, пойдёт»); runtime token-layer plugin (variant bar in shell.overlay), geometry density deferred to the foundation rollout PR; artifact: research/ow-restyle-proto → research-notes/ow-restyle-proto/.\n\n## Not yet specified\n\n• Execution rollout tickets (foundation → components → density → verification at :3080) — graduate once dsh-ood.6 (Assign OW density and layout patterns) resolves; the destination now carries execution in-map.\n• Token-bypass cleanup pass — the 12 hardcoded sites (boot-page, JsonTree, HoverCard, OnboardingSurface, InputBar, ContextMeter, Rows, TrajectoryTable, katex-error, ansi.ts, shiki.css) deferred by the .4 decision; graduate after the prototype shows which of them matter visually.\n\n## Out of scope\n\n• dsh-desktop and any surface other than the web GUI.\n• CLI/TUI styling.\n• Upstream PR of the redesign to deepseek-ai.\n• Porting OpenWorker *functionality* (Inbox, Connectors screens, Automations UI…) — that is dsh-t28's effort; here only the design language crosses.","notes":"Closed: OpenWorker design system extraction (dsh-ood.2) — OW token set (21 colors/theme + Geist scale + radii/hairlines/badges/motion) mapped to DSH; ~35 new --dsw-static-* vars, blue-*/deepseek-*/duplicate gray ramps die, blue-for-meaning collapses to Work Cobalt; findings: research/ow-design-extract/research-notes/ow-design-extract.md\n\nClosed: Web-GUI surface inventory (dsh-ood.1) — 25 styled packages, 106 CSS modules (16.3k LOC) over ui-theme token sheets; ~80-90% token-reachable via alias remap, restyle tail = boot page, JsonTree, ansi.ts, ~40 hardcoded literals, geometry work; findings: research/dsh-ui-inventory/research-notes/dsh-ui-inventory.md\n\nClosed: Theme mechanics and Geist path (dsh-ood.3) — dark mode is a body[data-ds-dark-theme] attribute (no media query) set pre-paint by an inline boot script and later by ThemePresenter; self-host Geist as plain-CSS-imported woff2 in the Vite graph (KaTeX precedent, assets/fonts/ routing already configured); findings: research/dsh-theme-mechanics/research-notes/dsh-theme-mechanics.md\n\n• Prototype: key surfaces restyled in OW language /dsh-ood.5 — human took the max variant: locked mapping + Geist + density probe («ок, пойдёт»); runtime token-layer plugin (bar in shell.overlay), geometry density deferred to the foundation rollout PR; artifact: research/ow-restyle-proto → research-notes/ow-restyle-proto/.","status":"open","priority":1,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:49Z","created_by":"Sereja","updated_at":"2026-08-26T09:33:10Z","labels":["wayfinder:map"],"dependency_count":0,"dependent_count":0,"comment_count":0},{"id":"dsh-ood.1","title":"Web-GUI surface inventory: what restyling touches","description":"## Question\n\nWhich surfaces make up the DSH web GUI, and how is each styled? Produce the inventory that the token mapping and the pattern assignment will be sliced against:\n\n1. Enumerate the surfaces: shell/layout, chat transcript, composer, settings rows/panels, cordis run panels, tool cards, dialogs, every packages/client/ui-* and packages/extensions/ui-* slot that paints pixels.\n2. For each: styling approach — CSS Modules in-package, shared --dsw-static-* tokens, or hardcoded colors/values bypassing tokens — with rough size (files, LOC of styling).\n3. The dark corners: shiki code theme, KaTeX, scrollbar styling, markdown rendering — where they get their colors.\n4. A size estimate of the total restyle front, split \"token-reachable\" vs \"needs per-package edits\".\n\n## Context\n\n- packages/client/ui-theme/src/styles/design-platform.css defines the --dsw-static-* scale and body[data-ds-dark-theme] overrides; theme preference is light/dark/system via AppearanceRow.\n- apps/web is a thin Vite entry over the @deepseek-ai/dsh-client-web shell; all real UI lives in packages.\n- Findings land on branch research/dsh-ui-inventory; the resolution comment links the file.\n","status":"closed","priority":1,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:49Z","created_by":"Sereja","updated_at":"2026-08-25T22:30:37Z","started_at":"2026-08-25T22:27:58Z","closed_at":"2026-08-25T22:30:37Z","close_reason":"Closed","labels":["wayfinder:map","wayfinder:research"],"dependencies":[{"issue_id":"dsh-ood.1","depends_on_id":"dsh-ood","type":"parent-child","created_at":"2026-08-26T01:27:49Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":1,"parent":"dsh-ood"},{"id":"dsh-01e.4","title":"Prototype: panel UX - wayfinder-aware task list and dependency graph","description":"## Question\n\nHow should the Beads view look and behave? Raise fidelity with a cheap concrete artifact to react to — a static mock or a live stub over real bd data from this repo's `.beads/`:\n\n- Task list: grouping model (frontier first? blocked-on-top per OpenWorker Board? grouped by wayfinder map?), row content (id, title, priority, status icon, labels), attention chips semantics (amber = blocked/review, quiet count otherwise).\n- Dependency graph: node content and sizing, edge rendering (blocks vs parent-child), layering, interaction (click → ego graph / ticket detail, pan/zoom?) — the view owns the full center-column width (tab direction, dsh-01e.3), so sizing answers assume a wide canvas, not a 300–520px rail.\n- Ticket detail: description, status/priority/assignee/labels, comments (loaded on demand), dependency lists.\n- Grey-tab availability presentation (no `.beads/`): the disabled tab + tooltip treatment in the strip.\n- Empty / loading / error states (no `.beads/`, bd missing, huge store) and Chinese product copy.\n\nBlocked by the reader and slot tickets — it consumes their answers.","status":"in_progress","priority":2,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-26T00:59:30Z","created_by":"Sereja","updated_at":"2026-08-26T09:29:54Z","started_at":"2026-08-26T09:29:54Z","labels":["wayfinder:map","wayfinder:prototype"],"dependencies":[{"issue_id":"dsh-01e.4","depends_on_id":"dsh-01e.3","type":"blocks","created_at":"2026-08-26T03:59:31Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-01e.4","depends_on_id":"dsh-01e","type":"parent-child","created_at":"2026-08-26T03:59:30Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-01e.4","depends_on_id":"dsh-01e.1","type":"blocks","created_at":"2026-08-26T09:37:53Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-01e.4","depends_on_id":"dsh-01e.2","type":"blocks","created_at":"2026-08-26T03:59:30Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":3,"dependent_count":0,"comment_count":0,"parent":"dsh-01e"},{"id":"dsh-01e.2","title":"bd reader: canonical data source, liveness, and client wire contract","description":"## Question\n\nHow does the host read bd and feed the panel? Decide:\n\n1. **Canonical data source**: `bd list --all --json -n 0` (structured fields, inline `dependencies[]`/`parent`, conditional-absent fields) vs `bd graph --dot` (DOT text with display-baked labels) vs a mix. `bd graph`'s layered views are display formats — if topological layers are wanted in the UI, are they computed host-side from the JSON edges?\n2. **Package placement and shape**: full capability seam (Service Definition / provider / Consumer) vs a plain host plugin exposing one service; new `packages/` group or an existing one. Who else could consume the reader (CLI, future mutations path) — does that justify the seam today?\n3. **Liveness**: fs.watch `.beads/last-touched` + cheap digest poll (`bd list -n 1` / `updated_at` max) → full refetch on change. Intervals, debounce, pause-when-hidden, and binding to the session cwd (the store follows the session's repo; switching sessions switches stores).\n4. **Wire contract**: client→host RPC pull on demand vs host→client push frames over the existing connection; comment bodies fetched per-issue via `bd show --json --include-comments` only on selection.\n5. **Config surface**: validated Config fields (bd binary resolution, poll interval) — no hardcoded tunables.\n6. **Failure modes**: bd binary missing, no `.beads/` in cwd, store locked by a concurrent writer, very large stores (always `-n 0`; what degrades?).","status":"closed","priority":2,"issue_type":"decision","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-26T00:59:29Z","created_by":"Sereja","updated_at":"2026-08-26T06:39:51Z","started_at":"2026-08-26T06:37:55Z","closed_at":"2026-08-26T06:39:51Z","close_reason":"All four sub-decisions confirmed by dev; reader contract locked","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-01e.2","depends_on_id":"dsh-01e","type":"parent-child","created_at":"2026-08-26T03:59:28Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":1,"parent":"dsh-01e"},{"id":"dsh-01e.3","title":"Panel slot and column integration in AppFrame","description":"## Question\n\nHow does the right panel enter the frame? Decide:\n\n1. **Slot declaration**: name (e.g. `tasks` / `issues`), scope (workspace-scoped like the sidebar vs session-scoped like `details`), owner, SlotMap registration, children it declares (list view, graph view, ticket detail).\n2. **Fourth column in the concession chain** (columns.ts): the contract is \"center >= CENTER_MIN, then details concedes, then auto-closes\" — where does the tasks column sit in that order? Geometry: min/max/default (OpenWorker's 332px default is a data point; our details column is 300–520), and whether the graph gets a two-width reading mode (narrow inspector <-> wide reading, OW pattern) or just the standard clamp range.\n3. **Coexistence with the existing `details` column** (tool-call inspector): both open simultaneously, mutual exclusion, or shared column with a tab ring? The details column is session-scoped; the tasks panel is per-workspace — how do the scopes interplay in one frame?\n4. **Visibility persistence and deep links**: stored preference + transient force-show without clobbering it (OW pattern); where the toggle lives (topbar button, collapsed rail, keyboard).\n5. **Regression surface**: AppFrame/columns contract tests and the layout store — what changes, what must keep passing.","status":"closed","priority":2,"issue_type":"decision","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-26T00:59:29Z","created_by":"Sereja","updated_at":"2026-08-26T09:09:22Z","started_at":"2026-08-26T06:47:44Z","closed_at":"2026-08-26T09:09:22Z","close_reason":"Resolved: Beads is a 'beads' entry (order 20) in the existing conversation.view ring; grey probe-gated tab without .beads/; package dsh-client-ui-beads. Full answer in the resolution comment.","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-01e.3","depends_on_id":"dsh-01e","type":"parent-child","created_at":"2026-08-26T03:59:29Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":1,"parent":"dsh-01e"},{"id":"dsh-01e.1","title":"Graph rendering: hand-rolled layered SVG vs a layout dependency","description":"## Question\n\nHow should the dependency graph be laid out and rendered in the panel: a hand-rolled layered SVG layout (topological columns — `bd graph`'s own LAYER model and OpenWorker's absence of any graph view are the prior art) or a maintained library (@dagrejs/dagre, elkjs, cytoscape, …)?\n\nConstraints that decide it:\n- View sizes: ~5–50 nodes (wayfinder-map subtree, per-ticket ego graph).\n- Typed edges: `blocks` vs `parent-child` (bd dep types) should stay visually distinct.\n- Must fit a dynamic client bundle: tsdown closure, baseline-externals module-graph discipline (packages/client/AGENTS.md) — a new dependency lands in `dependencies` and ships inside `lib/client.js`.\n- Per-file 100% coverage gate applies to any owned layout code.\n- Repo rule: \"prefer maintained dependencies over hand-rolling when they genuinely delete owned code\" — evaluate honestly against a ~150-line layered layout.\n- `bd graph --html` itself embeds D3 as evidence a small lib can carry it, but our panel is native React in the slot system, not an iframe.\n\nDeliverable: verdict (library name or hand-rolled) + evidence (maintenance status, ESM fitness, bundle size, license), and a fallback if the verdict fails at prototype time. Findings land on a throwaway `research/` branch; link it back here.","notes":"branch: research/bd-graph-layout (commit e0f9ad6db6) — research-notes/bd-graph-layout.md","status":"closed","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-26T00:59:28Z","created_by":"Sereja","updated_at":"2026-08-26T06:37:53Z","closed_at":"2026-08-26T06:37:53Z","close_reason":"Research resolved: @dagrejs/dagre v3 chosen as layout dependency; findings on research/bd-graph-layout","labels":["wayfinder:map","wayfinder:research"],"dependencies":[{"issue_id":"dsh-01e.1","depends_on_id":"dsh-01e","type":"parent-child","created_at":"2026-08-26T03:59:27Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":1,"parent":"dsh-01e"},{"id":"dsh-ood.7","title":"Feasibility verdict and PR-series plan","description":"## Question\n\nIs the full port feasible inside the settled constraints — minimal upstream divergence, both themes, incremental PRs — and what is the exact slicing? Decide:\n\n1. The feasibility verdict the effort opened with, now backed by inventory + prototype evidence; any de-scoping needed to keep divergence acceptable.\n2. The PR-series order (foundation: fonts+tokens → components → density), each PR's scope and its screenshot-audit checklist (which surfaces, light+dark, which OW mocks as comparison).\n3. The rollback/pause stance for upstream-merge collisions with restyled files.\n\n## Context\n\n- Inputs: everything closed above. This is the last decision before execution sessions can take over.\n","status":"open","priority":2,"issue_type":"decision","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:54Z","created_by":"Sereja","updated_at":"2026-08-25T22:27:54Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-ood.7","depends_on_id":"dsh-ood.6","type":"blocks","created_at":"2026-08-26T01:27:57Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-ood.7","depends_on_id":"dsh-ood","type":"parent-child","created_at":"2026-08-26T01:27:54Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":0,"comment_count":0,"parent":"dsh-ood"},{"id":"dsh-ood.6","title":"Assign OW density and layout patterns to surfaces","description":"## Question\n\nWhich OW layout/density patterns go to which DSH surfaces in the second tier? Decide screen-by-screen for the key-surface list: Cockpit Balanced density (13px body, compact panels), split layouts and grid rhythm, panel/micro-label hierarchy, motion restraint. CSS-first per the minimal-divergence stance; DOM changes only where a pattern demands one — name those exceptions explicitly.\n\n## Context\n\n- Input: the prototype reaction (what the human liked/disliked) + the surface inventory.\n- Standing decision #2 fixes the two-tier split; this ticket fills in the per-screen assignments.\n\n## Updates after research closed\n\n- The third-party-conformance question graduated here: extension slot UIs (packages/extensions/ui-*, tool cards, cordis panels) sit on the same --dsw-alias-* layer, so token-level conformance is automatic — decide here only their *density/pattern* tier (full Cockpit treatment vs token-recolor only), screen by screen.\n","status":"open","priority":2,"issue_type":"decision","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:53Z","created_by":"Sereja","updated_at":"2026-08-25T22:33:06Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-ood.6","depends_on_id":"dsh-ood","type":"parent-child","created_at":"2026-08-26T01:27:53Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-ood.6","depends_on_id":"dsh-ood.5","type":"blocks","created_at":"2026-08-26T01:27:56Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0,"parent":"dsh-ood"},{"id":"dsh-ood.4","title":"Lock the OW-to-DSH token mapping","description":"## Question\n\nWhich final OW→DSH token mapping do we lock? Decide over the drafted table:\n\n1. Token additions/renames/deprecations in design-platform.css (light + dark blocks), including new semantic vars OW needs (hairline-strong, badge soft/line pairs, cobalt accents).\n2. Fate of --dsw-static-blue-* and --dsw-static-deepseek-* under the single-accent canon — full retirement, or a minimal surviving set for logo moments.\n3. Status/badge token shape serving both themes token-for-token.\n4. Geist type-scale tokens: which font-size/weight/tracking triples become vars vs stay per-component CSS.\n\n## Context\n\n- Inputs: the OW token extraction (research/ow-design-extract) and the DSH surface inventory (research/dsh-ui-inventory).\n- Standing decision: pure OW canon, Cobalt the only accent, both themes mirrored.\n","status":"closed","priority":2,"issue_type":"decision","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:52Z","created_by":"Sereja","updated_at":"2026-08-25T23:45:32Z","started_at":"2026-08-25T23:40:47Z","closed_at":"2026-08-25T23:45:32Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-ood.4","depends_on_id":"dsh-ood","type":"parent-child","created_at":"2026-08-26T01:27:51Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-ood.4","depends_on_id":"dsh-ood.2","type":"blocks","created_at":"2026-08-26T01:27:54Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-ood.4","depends_on_id":"dsh-ood.1","type":"blocks","created_at":"2026-08-26T01:27:54Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":2,"dependent_count":1,"comment_count":1,"parent":"dsh-ood"},{"id":"dsh-ood.5","title":"Prototype: key surfaces restyled in OW language","description":"## Question\n\nHow do the key surfaces look and feel once restyled per the locked mapping? Raise fidelity with a cheap, rough, reactable vertical slice — shell + chat transcript + one settings row — in OW styling, light and dark, so the human can react before the wide rollout. Real code on a throwaway branch (or a dynamic Cordis client plugin overriding tokens at runtime) — whatever is cheaper to react to and discard.\n\n## Context\n\n- Inputs: the locked token mapping + the theme-mechanics/font findings (research/dsh-theme-mechanics).\n- This is a prototype to react to, not production code; it may be thrown away after the reaction.\n- Key surfaces per standing decision #2: shell, chat transcript, sidebars, settings.\n","status":"closed","priority":2,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-25T22:27:52Z","created_by":"Sereja","updated_at":"2026-08-26T09:31:55Z","started_at":"2026-08-26T09:08:10Z","closed_at":"2026-08-26T09:31:55Z","close_reason":"Prototype reacted to: max variant chosen (mapping + Geist + density); artifact on research/ow-restyle-proto","labels":["wayfinder:map","wayfinder:prototype"],"dependencies":[{"issue_id":"dsh-ood.5","depends_on_id":"dsh-ood.4","type":"blocks","created_at":"2026-08-26T01:27:55Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-ood.5","depends_on_id":"dsh-ood.3","type":"blocks","created_at":"2026-08-26T01:27:56Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-ood.5","depends_on_id":"dsh-ood","type":"parent-child","created_at":"2026-08-26T01:27:52Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":2,"dependent_count":1,"comment_count":2,"parent":"dsh-ood"},{"id":"dsh-chk.5","title":"Remote MCP auth 5/5: settings auth affordance + keyless runnable example","description":"## Parent\n\ndsh-chk — Remote MCP servers: OAuth and bearer auth\n\n## What to build\n\nMinimal per-server auth surface in the existing settings UI — status chip (anonymous / connected / needs sign-in) with Connect and Sign-out actions — plus the keyless runnable example the repo requires: a scripted fake OAuth MCP server and a client config demonstrating the full cycle (connect → tools → silent refresh → dead-refresh park → re-sign-in) with no account or key. Web browser snapshot coverage for the new affordance.\n\n## Acceptance criteria\n\n- [ ] Settings show per-server auth status: anonymous / connected / needs sign-in\n- [ ] Connect starts the interactive flow; Sign-out deletes the grant and disconnects\n- [ ] Keyless example runs the full cycle (connect → tools → refresh → park → re-sign-in) with zero credentials\n- [ ] Example ships keyless smoke per the examples policy; web snapshot lane covers the status chip and actions\n- [ ] Web snapshot expectations recorded and reviewed; per-file coverage gate green\n\n## Blocked by\n\nRemote MCP auth 3/5 and Remote MCP auth 4/5","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T14:06:16Z","created_by":"Sereja","updated_at":"2026-08-24T14:06:16Z","labels":["ready-for-implement"],"dependencies":[{"issue_id":"dsh-chk.5","depends_on_id":"dsh-chk","type":"parent-child","created_at":"2026-08-24T17:06:16Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-chk.5","depends_on_id":"dsh-chk.4","type":"blocks","created_at":"2026-08-24T17:06:18Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-chk.5","depends_on_id":"dsh-chk.3","type":"blocks","created_at":"2026-08-24T17:06:18Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":2,"dependent_count":0,"comment_count":0,"parent":"dsh-chk"},{"id":"dsh-chk.4","title":"Remote MCP auth 4/5: supervisor park + skip-and-surface for unattended runs","description":"## Parent\n\ndsh-chk — Remote MCP servers: OAuth and bearer auth\n\n## What to build\n\nAuth-aware failure handling in the reconnect supervisor and session bootstrap. An unauthorized error at connect (dead or missing refresh token) parks the server — tools unregistered, status \"needs sign-in\" — without consuming the reconnect attempt budget; recovery is only a fresh sign-in, after which the server reconnects. At the start of a headless run (and session start), servers without usable auth are skipped with a surfaced note naming the server (\"server X skipped: sign-in required\"); the run/session proceeds. All other failure classes keep today's backoff behavior.\n\n## Acceptance criteria\n\n- [ ] Unauthorized connect failure → server parked (tools unregistered, \"needs sign-in\"), reconnect attempt budget untouched\n- [ ] Fresh sign-in on a parked server → reconnects; no restart needed\n- [ ] Backoff behavior unchanged for non-auth failures (process death, network refusal)\n- [ ] Headless run start with a dead-auth server → server skipped, note surfaced in the transcript, run completes\n- [ ] Session start with a dead-auth server → skipped with surfaced note; turn proceeds\n- [ ] Unit specs cover park-not-backoff, budget conservation, recovery, and skip paths; per-file coverage gate green\n\n## Blocked by\n\nRemote MCP auth 2/5: OAuth provider + grant storage on the transport","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T14:06:15Z","created_by":"Sereja","updated_at":"2026-08-24T14:06:15Z","labels":["ready-for-implement"],"dependencies":[{"issue_id":"dsh-chk.4","depends_on_id":"dsh-chk","type":"parent-child","created_at":"2026-08-24T17:06:15Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-chk.4","depends_on_id":"dsh-chk.2","type":"blocks","created_at":"2026-08-24T17:06:17Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0,"parent":"dsh-chk"},{"id":"dsh-chk.2","title":"Remote MCP auth 2/5: OAuth provider + grant storage on the transport","description":"## Parent\n\ndsh-chk — Remote MCP servers: OAuth and bearer auth\n\n## What to build\n\nThe MCP client SDK's provider contract implemented over the credentials store: one grant record per server at scope `mcp`, id `<server>`, payload `{ version: 1, tokens, clientInformation }` replaced atomically. The streamable-HTTP transport is constructed with the auth provider when `auth: oauth` is configured; token refresh persists through the save callback. No protocol code written — the SDK owns discovery, PKCE, DCR, refresh.\n\n## Acceptance criteria\n\n- [ ] A pre-seeded valid grant (tokens + client info) connects to a fake OAuth-protected remote server without any interactive flow; tools are listed\n- [ ] Expired access token + working refresh token: SDK refreshes silently mid-connection; the updated tokens replace the grant record in place\n- [ ] Grant record shape is `{ version: 1, tokens, clientInformation }` under the server's credential key; one record per server, atomic replacement\n- [ ] Re-sign-in (grant overwrite) and sign-out (record deleted, server disconnected) operate on the same single record\n- [ ] Fake authorization server speaks real HTTP on a loopback port; only the external provider boundary is faked\n- [ ] Unit specs + per-file coverage gate green\n\n## Blocked by\n\nRemote MCP auth 1/5: config surface + bearer mode","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T14:06:14Z","created_by":"Sereja","updated_at":"2026-08-24T14:06:14Z","labels":["ready-for-implement"],"dependencies":[{"issue_id":"dsh-chk.2","depends_on_id":"dsh-chk.1","type":"blocks","created_at":"2026-08-24T17:06:16Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-chk.2","depends_on_id":"dsh-chk","type":"parent-child","created_at":"2026-08-24T17:06:13Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":2,"comment_count":0,"parent":"dsh-chk"},{"id":"dsh-chk.3","title":"Remote MCP auth 3/5: interactive sign-in — loopback callback + single-slot flow","description":"## Parent\n\ndsh-chk — Remote MCP servers: OAuth and bearer auth\n\n## What to build\n\nExplicit-connect-only browser sign-in: a loopback GET callback route on the running web app's HTTP server, gated by state; the flow rides the existing authorization-flow service (notify with URL, prompt, abort signal). One global pending sign-in slot; in-flight flows time out after 300 seconds; a second concurrent attempt is rejected with a clear message. Re-sign-in replaces the existing grant; the DCR client registration is reused across sign-ins. Background paths (session start, tool listing, reconnect) never open a browser; headless/CLI-only contexts get an actionable \"start the web UI to sign in\" error instead.\n\n## Acceptance criteria\n\n- [ ] Sign-in started explicitly: browser authorization against the fake server completes via the loopback redirect; server becomes connected; tools listed\n- [ ] Callback requests with wrong/absent state never complete a sign-in\n- [ ] Second concurrent sign-in attempt → rejected with \"sign-in already in progress\"; the first flow is unaffected\n- [ ] In-flight sign-in times out after 300 s; the slot frees; a fresh attempt works\n- [ ] Re-sign-in replaces the previous grant; DCR client info reused (no second registration round)\n- [ ] Session start / tool listing / reconnect with missing auth never opens a browser\n- [ ] Headless or CLI-only context attempting sign-in gets the explicit \"start the web UI\" error\n- [ ] Registry HMR-safety test: disposing the contributing fiber removes the route and pending slot\n\n## Blocked by\n\nRemote MCP auth 2/5: OAuth provider + grant storage on the transport","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T14:06:14Z","created_by":"Sereja","updated_at":"2026-08-24T14:06:14Z","labels":["ready-for-implement"],"dependencies":[{"issue_id":"dsh-chk.3","depends_on_id":"dsh-chk","type":"parent-child","created_at":"2026-08-24T17:06:14Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-chk.3","depends_on_id":"dsh-chk.2","type":"blocks","created_at":"2026-08-24T17:06:17Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0,"parent":"dsh-chk"},{"id":"dsh-chk.1","title":"Remote MCP auth 1/5: config surface + bearer mode","description":"## Parent\n\ndsh-chk — Remote MCP servers: OAuth and bearer auth\n\n## What to build\n\nA remote (streamable-HTTP) MCP server definition gains an `auth` discriminator: `{ type: 'oauth' }`, `{ type: 'bearer', credential: <CredentialRef> }`, or absent for anonymous (today's behavior). Bearer tokens resolve through the credentials store at connect time — never inlined in config. Misconfiguration fails loudly at plugin load with an actionable message.\n\n## Acceptance criteria\n\n- [ ] `auth: bearer` + credential reference: connect succeeds against a token-checking remote server; tools are listed\n- [ ] Referenced credential missing/unresolvable: server fails closed at connect with a clear parked-style error, never an anonymous attempt\n- [ ] No `auth` block: behavior identical to today (anonymous)\n- [ ] Unknown `auth.type` → plugin load fails with the config path in the message\n- [ ] `auth.type=oauth` with non-`https://` URL (except 127.0.0.1/localhost) → load fails\n- [ ] `bearer` combined with a static `Authorization` header → load fails as ambiguous\n- [ ] Unit specs in the package tests directory cover every validation branch; per-file coverage gate green\n\n## Blocked by\n\nNone (can start immediately).","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T14:06:13Z","created_by":"Sereja","updated_at":"2026-08-24T14:06:13Z","labels":["ready-for-implement"],"dependencies":[{"issue_id":"dsh-chk.1","depends_on_id":"dsh-chk","type":"parent-child","created_at":"2026-08-24T17:06:12Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":0,"parent":"dsh-chk"},{"id":"dsh-chk","title":"Remote MCP servers: OAuth and bearer auth","description":"## Problem Statement\n\nA DSH user can configure stdio MCP servers and anonymous streamable-HTTP (remote) servers today, but most real remote servers require authentication. There is no way to sign in: the remote-server config accepts only static headers, no OAuth flow exists anywhere in the product, there is no token storage, and unattended (headless) runs have no defined behavior when a server's credentials are missing or expired. The agent either fails to connect or silently loses the server's tools with no explanation a human can act on.\n\n## Solution\n\nRemote MCP servers become first-class authenticated citizens:\n\n- Adding a remote server by URL offers two auth modes: **OAuth** (browser sign-in via the MCP authorization spec: OAuth 2.1 + PKCE + dynamic client registration) and **bearer** (a static personal token referenced through the credentials store, never inlined in config). No `auth` block means anonymous, as today.\n- The MCP settings surface shows each server's auth status (anonymous / connected / needs sign-in) with an explicit **Connect** action. Connect opens the browser; the provider redirects back to the running web app on a loopback route and the server's tools appear. Sign-out forgets the grant and disconnects.\n- Tokens and registered client info persist in the credentials store and refresh silently; a dead refresh token parks the server as \"needs sign-in\" instead of error-spamming reconnect attempts.\n- Sessions and unattended runs never block on auth: a server without usable credentials is skipped with a surfaced note (\"server X skipped: sign-in required\"), and mid-session auth loss parks that server only — the run continues.\n\n## User Stories\n\n1. As a DSH user, I want to add a remote MCP server by URL, so that I can use its tools without a local process.\n2. As a DSH user, I want to leave `auth` unset for public servers, so that anonymous remote servers keep working exactly as before.\n3. As a DSH user, I want `auth: oauth` on a server, so that I can sign in with my account in the browser instead of pasting tokens.\n4. As a DSH user, I want `auth: bearer` with a credential reference, so that servers which issue personal tokens work without secrets in config files.\n5. As a DSH user, I want to see each server's auth status (anonymous / connected / needs sign-in), so that I know at a glance which servers are usable.\n6. As a DSH user, I want an explicit Connect button that starts sign-in, so that the browser opens only when I asked for it.\n7. As a DSH user, I want the sign-in to return me to the app automatically via a loopback redirect, so that I don't paste codes by hand.\n8. As a DSH user, I want the callback validated by state (CSRF), so that stray or forged local hits can't complete my sign-in.\n9. As a DSH user, I want a second concurrent sign-in attempt rejected with a clear \"sign-in already in progress\" message, so that flows can't interleave.\n10. As a DSH user, I want an in-flight sign-in to time out (5 minutes), so that a forgotten browser tab doesn't wedge the slot forever.\n11. As a DSH user, I want re-signing in to replace the previous grant, so that switching accounts leaves no stale tokens.\n12. As a DSH user, I want Sign-out to delete stored tokens and disconnect the server, so that revocation is one click.\n13. As a DSH user, I want tokens and client registration to persist across app restarts, so that I sign in once per server.\n14. As a DSH user, I want access tokens refreshed silently in the background, so that long sessions don't interrupt on expiry.\n15. As a DSH user, I want a server whose refresh token died to be parked as \"needs sign-in\", so that I see one actionable status instead of a crash loop.\n16. As a DSH user, I want a parked server to reconnect automatically after I re-sign in, so that recovery needs no restart.\n17. As an agent, I want a server without usable credentials to be absent from my tools with a surfaced note, so that my turn proceeds instead of failing.\n18. As an unattended automation run, I want auth-dead servers skipped at start with the skip recorded in the transcript, so that the run completes and the reason is auditable later.\n19. As a DSH user, I want misconfiguration rejected loudly at load (unknown auth type; non-HTTPS OAuth URL except loopback; bearer combined with an Authorization header), so that typos fail at startup, not mid-session.\n20. As a DSH user, I want `http://` accepted for loopback (127.0.0.1 / localhost) server URLs, so that local development servers work.\n21. As a DSH user, I want the dynamically registered client information reused across sign-ins, so that providers don't re-prompt for consent every time.\n22. As a DSH user, I want background paths (session start, tool listing, reconnect) to never open a browser, so that an unattended session can't hijack my desktop.\n23. As a DSH user running headless, I want sign-in attempts to fail with an explicit \"start the web UI to sign in\" message, so that the fix is obvious.\n24. As a repo maintainer, I want the OAuth provider implemented on the existing authorization and credentials services, so that no new storage or browser plumbing is invented.\n25. As a repo maintainer, I want no new session-event surface in this feature, so that the TS/Python SDK parity cost stays zero.\n26. As a repo maintainer, I want a keyless runnable example demonstrating the full flow against a scripted fake OAuth server, so that CI and contributors exercise the feature without accounts.\n27. As a DSH user, I want the sign-in flow's notifications (\"Continue in your browser\") visible in the UI, so that I know what the app is waiting for.\n\n## Implementation Decisions\n\n- **Config surface**: the streamable-HTTP server definition gains an `auth` discriminator — `{ type: 'oauth' }` or `{ type: 'bearer', credential: <CredentialRef> }`; absence means anonymous. Validation is fail-loud at plugin load: unknown `type` rejected; OAuth requires `https://` except loopback hosts; `bearer` combined with a static `Authorization` header rejected as ambiguous. No `scopes`/`clientMetadata` overrides in this spec.\n- **OAuth protocol**: use the MCP client SDK's built-in stack (OAuth 2.1 + PKCE, dynamic client registration, RFC 9728/8707 discovery, automatic refresh). The app implements only the provider contract: token/client-info persistence, browser redirect, and code-Verifier state. No protocol code is written.\n- **Provider persistence**: one grant record per server under the credentials store at scope `mcp`, id `<server>`; payload `{ version: 1, tokens, clientInformation }` replaced atomically. Refresh tokens update the record in place via the provider's save callback. Sign-out deletes the record and disconnects. The server's config name is the credential identity; profiles reusing a name share the grant (accepted caveat; scoping is out of scope).\n- **Interactive flow**: ride the existing authorization-flow service — a plugin-registered flow keyed by the credential, using its notify (with URL), prompt, and abort-signal surface; terminal settlement event closes the pending slot. One global pending sign-in slot; a second concurrent attempt is rejected. In-flight flows time out after 300 seconds. Re-sign-in invalidates and replaces the existing grant.\n- **Callback transport**: a loopback GET route on the web host's HTTP server (`http://127.0.0.1:<port>/mcp/oauth/callback`), gated by state. Sign-in requires the running web app; headless or CLI-only contexts get an explicit actionable error instead of a browser attempt.\n- **Transport wiring**: the streamable-HTTP transport is constructed with the auth provider when `auth` is configured (bearer resolves its credential through the credentials resolve seam at connect time and fails closed with a parked status if the referenced value is missing).\n- **Reconnect supervisor**: an unauthorized error from connect (dead or missing refresh token) parks the server — tools unregistered, status \"needs sign-in\" — without consuming the reconnect attempt budget; recovery is only a fresh sign-in. All other failure classes keep today's backoff behavior.\n- **Unattended policy**: at the start of a headless run (and at session start), servers with dead or missing auth are skipped with a surfaced note naming the server; the run/session proceeds. This is the adopted openworker invariant (its \"interactive auth required\" behavior).\n- **UI surface**: minimal per-server auth status + Connect / Sign-out affordance in the existing settings surface. The full settings-and-tools UI remains a separate open design ticket (per-tool gating + UI prototype).\n\n## Testing Decisions\n\n- Good tests assert external behavior only: validation outcomes on published config, observable park/skip/status behavior, the shape and lifecycle of the stored grant record, callback state-gating. Unit specs live in the package's `tests/` directory (`*.spec.ts`); the repository per-file 100% coverage gate applies to all new source.\n- The OAuth provider is tested against an in-process fake authorization server speaking real HTTP on a loopback port, driven through the SDK's real auth flow — the fake replaces only the external provider boundary (mock only the expensive/non-deterministic boundary, per the testing policy).\n- Reconnect supervisor: inject an unauthorized connect failure and assert park-not-backoff, zero budget consumption, and recovery after re-sign-in; add the registry HMR-safety test (dispose the contributing fiber, assert cleanup) required of every registry.\n- Product-visible behavior ships a keyless runnable example: a scripted fake OAuth MCP server plus a client config exercising connect → tools listed → token refresh → dead-refresh park, runnable without any account or key.\n- Prior art: contract-regression specs in the core agent loop's tests; keyless example smokes per the examples policy; the web browser snapshot lane covers the new settings auth-status affordance.\n\n## Out of Scope\n\n- Per-tool include/exclude gating for MCP servers (open decision ticket in the wayfinder map).\n- The full MCP settings & tools UI redesign (prototype ticket; only the minimal auth status/Connect affordance is in this spec).\n- `scopes` / `clientMetadata` overrides on the OAuth config.\n- Profile- or workspace-scoped server credentials.\n- External notifications (webhook/Telegram) for auth events.\n- MCP server role (DSH exposing itself as a server), Resources & Prompts surfaces, SSE/WebSocket transports.\n- Static tokens inlined in config (credential references only).\n\n## Further Notes\n\n- Derived from the wayfinder map \"Wayfinder: port automations, inbox, and MCP from openworker into DSH\": resolution of the decision ticket \"MCP: remote servers + OAuth design\" and the research ticket \"Research: TS MCP SDK remote/OAuth capabilities + DSH token storage\" (SDK 1.29.0 findings: full remote-auth stack built in; provider contract is the only integration seam).\n- Openworker parity invariants adopted deliberately: single-slot pending sign-in, state-gated loopback callback, DCR client reuse, explicit-connect-only interactivity, skip-and-surface for non-interactive paths.\n- Binding repo rules honored: plugins over core changes (the authorization/credentials seams already exist); no new session events (zero Python-SDK parity cost); fail-loud validated config with no hidden defaults; keyless runnable example required.","status":"open","priority":2,"issue_type":"epic","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T13:48:23Z","created_by":"Sereja","updated_at":"2026-08-24T13:48:23Z","labels":["ready-for-agent"],"dependencies":[{"issue_id":"dsh-chk","depends_on_id":"dsh-t28","type":"related","created_at":"2026-08-24T16:48:23Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":0,"comment_count":0},{"id":"dsh-t28.12","title":"Automations: UI","description":"## Question\n\nWhat does the Automations UI look like? Prototype to react to:\n- Task list: schedule (human-rendered \"Every day at ~7:10 PM\"), next fire, enabled toggle, last status, unread-runs badge.\n- Run history per task: status, trigger (schedule/manual/catchup), duration, result summary, link to the session transcript.\n- Run-now button; create/edit form (title, instructions, cron builder, timezone, workspace).\n- Where parked-approval runs show up (link to Inbox).\n\n## Context\n\n- Templates: `ui-jobs`, `ui-workflow-run`; openworker `surfaces/gui/src/components/ScheduledView.tsx` (508 LOC) for behavior reference.\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:35Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:35Z","labels":["wayfinder:map","wayfinder:prototype"],"dependencies":[{"issue_id":"dsh-t28.12","depends_on_id":"dsh-t28.8","type":"blocks","created_at":"2026-08-24T15:47:03Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.12","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:34Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.12","depends_on_id":"dsh-t28.10","type":"blocks","created_at":"2026-08-24T15:47:04Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":2,"dependent_count":0,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.11","title":"Automations: agent-facing tools in v1?","description":"## Question\n\nDoes v1 expose automation CRUD to the model as tools (`create_scheduled_task`, update/delete/list — openworker parity, approval-gated, with the agent proposing permissions), or are automations user-created only (UI/settings) in v1 with agent tools as fog?\nConsider: approval gating of the create tool itself, standing-grant proposals from the model (risk), and how much of the domain model must exist first.\n\n## Context\n\n- Openworker: `coworker/automation/tools.py` (233 LOC), `requires_approval=True` on create; consent card with proposed read/write permissions.\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:34Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:34Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.11","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:33Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":0,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.10","title":"Automations: run execution pipeline","description":"## Question\n\nDesign the run execution pipeline:\n1. Reuse `packages/bundle/headless` as-is, wrap it, or extract a shared runner? What varies per run (cwd/workspace, profile, opening prompt).\n2. Fresh persisted session per fire (Q7): session naming/linking so the UI can open the transcript.\n3. Opening-prompt framing (openworker: \"the schedule already fired — execute, don't reschedule\").\n4. Terminal statuses and error capture; result summary extraction for the runs list (Q12: in-UI only).\n5. Interaction with approvals mid-run: the run parks asks in the Inbox and keeps waiting — process model for that (ties to the Inbox wait mechanics).\n\n## Context\n\n- `packages/bundle/headless/` — `ctx.agents` fresh agent, one message, quiescence, flush, exit.\n- Openworker: `_run_scheduled_task` in `coworker/server/manager.py` (~L3505).\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:33Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:33Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.10","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:33Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.10","depends_on_id":"dsh-t28.8","type":"blocks","created_at":"2026-08-24T15:47:03Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.8","title":"Automations: domain model — tasks, runs, storage","description":"## Question\n\nDefine the Automations domain model:\n1. Task record: title, free-text instructions, schedule (5-field cron in an IANA timezone, or one-shot `fire_at`), `max_runs`, enabled, origin (session/user), workspace, `last_run`/`last_status`, `next_run` computation, seen-marks for unread runs.\n2. Run record: status (running/ok/error/skipped), trigger (schedule/manual/catchup), started/finished, result summary, link to the run's session transcript.\n3. Storage: `storage-domain` records vs new `automation/*` session events — price the TS+Python SDK rule; prefer storage.\n4. Binding to Inbox: per-task allow-always grants (Q10: per tool per automation) — where the grant list lives, how the inbox resolution mints it.\n5. Creation approval: creating a task is consequential — gate it through `ctx.approval` like openworker does.\n\n## Context\n\n- Openworker reference: `coworker/automation/models.py` (239 LOC), `store.py` (SQLite) — semantics to keep, storage to replace.\n- Blocked-by the Inbox domain ticket: grant vocabulary and parked-ask binding must match it.\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:32Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:32Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.8","depends_on_id":"dsh-t28.6","type":"blocks","created_at":"2026-08-24T15:47:02Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.8","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:31Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":3,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.9","title":"Automations: scheduler lifecycle in the web host","description":"## Question\n\nDesign the scheduler's lifecycle in the web host:\n1. Owner plugin placement in `packages/host`; start/stop with the host process.\n2. Tick loop and next-run computation per task timezone (croniter-equivalent in TS; clock source).\n3. Catch-up policy for fires missed while `dsh web` wasn't running (openworker: fire once with `trigger=catchup`).\n4. Skip-on-overlap when the previous run is still going; runs spawned, never awaited, so a parked approval can't stall the scheduler.\n5. What happens when the host isn't running at all (documented no-op? external wake?) — align with Q8 (no separate daemon).\n\n## Context\n\n- Openworker reference: `coworker/automation/scheduler.py` (113 LOC) — pure loop + injected runner.\n- DSH `packages/schedule` is session-local only (no cron, no cold sessions) — this is a new subsystem, not an extension of it.\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:32Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:32Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.9","depends_on_id":"dsh-t28.8","type":"blocks","created_at":"2026-08-24T15:47:02Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.9","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:32Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":0,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.7","title":"Inbox: UI","description":"## Question\n\nWhat does the Inbox UI look like? Prototype to react to:\n- Inbox view: pending/resolved, filters by kind/session/run, unread badge.\n- Approval card: full tool call with args (from the enriched payload), allow / deny / always-for-this-automation (Q10 grant), audit trail link.\n- Question card (if questions are in v1 per the domain ticket): options, free text.\n- What happens visually when a parked run resumes after resolution.\n\n## Context\n\n- Templates: `ui-user-questions`, `ui-jobs`; slot-driven client plugins in `packages/client/`.\n- Blocked by the Inbox domain model ticket (kinds and vocabulary feed the cards).\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:31Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:31Z","labels":["wayfinder:map","wayfinder:prototype"],"dependencies":[{"issue_id":"dsh-t28.7","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:30Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.7","depends_on_id":"dsh-t28.6","type":"blocks","created_at":"2026-08-24T15:47:01Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":0,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.6","title":"Inbox: domain model for durable parked approvals","description":"## Question\n\nDefine the Inbox domain model:\n1. Item kinds for v1 (approval; question?) and their payloads (approval carries the enriched request from the core-payload ticket).\n2. State machine: `pending → resolved`, resolve-exactly-once, first-responder-wins, idempotency by `(session, tool_call_id)` for crash-resume.\n3. Durability: `storage-domain` records vs session events (price the TS+Python SDK rule; prefer storage). Copy the `agent-team` mailbox pattern (flush-before-commit, bounded pending) where it fits.\n4. How a parked unattended run *waits*: continuable subagent resumed on resolution? Blocked process in the web host? Session log replay?\n5. Which runs park asks: automations only, any headless run, or also an unattended toggle for interactive sessions (may stay fog)?\n6. Resolution vocabulary → existing `ctx.approval` outcomes mapping, incl. allow-always-per-tool-per-automation (Q10).\n\n## Context\n\n- New plugin (`interaction/approval-inbox` or similar) + the enriched approval request (blocked-by).\n- Openworker reference: `coworker/inbox.py` (384 LOC) — InboxStore, event waiters, resolve-once; `inbox_routing.py` named inboxes (mirrors out of scope here).\n- DSH: `packages/experimental/agent-team/` durable mailbox; `packages/subagent` continuable children; `packages/storage`.\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:30Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:30Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.6","depends_on_id":"dsh-t28.5","type":"blocks","created_at":"2026-08-24T15:47:01Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.6","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:30Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":2,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.4","title":"MCP: settings & tools UI","description":"## Question\n\nWhat does the MCP panel in the Web UI show and do? Produce a rough prototype to react to (per Q4, full GUI is in scope from the start):\n- Server list: state (connected/error/disabled), transport, per-server enable.\n- Tool list per server with individual toggles (the per-tool gating config surface).\n- OAuth connect/sign-out for remote servers (the OAuth design flow).\n- Reload/reconnect affordances.\n\nDecide placement: settings extension areas (`ui-settings-plugins` tab) vs a dedicated view; which client slots; how toggles map to runtime gating.\n\n## Context\n\n- Client plugins in `packages/client/` register into extension slots; `ui-settings`/`ui-settings-plugins` is the settings-tab extension point; RPC via `client/connection` over `host/apiproxy`.\n- Closest templates: `ui-permission-presets`, `ui-jobs`.\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:29Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:29Z","labels":["wayfinder:map","wayfinder:prototype"],"dependencies":[{"issue_id":"dsh-t28.4","depends_on_id":"dsh-t28.3","type":"blocks","created_at":"2026-08-24T15:47:00Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.4","depends_on_id":"dsh-t28.1","type":"blocks","created_at":"2026-08-24T15:46:59Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.4","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:28Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":2,"dependent_count":0,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.5","title":"Core: tool-call arguments in approval requests","description":"## Question\n\nHow do tool-call arguments (and risk context) get into approval requests? Today `ctx.approval.request(req)` carries no tool arguments, which makes any inbox review blind. Decide:\n1. Request schema extension in `packages/interaction/user-approval`: argument payload (full args? redacted summary?), tool name/target, session/run identity.\n2. Secret-redaction policy for args shown to humans and persisted to logs.\n3. Audit events `approval/asked` / `approval/decided` carrying the payload; retention.\n4. Both-SDK (TS + Python) impact; whether anything here needs new session events (avoid if possible — repo rule).\n\nThis is the sanctioned minimal core edit (Q9). Keep it small: enrich the request, don't redesign the waterfall.\n\n## Context\n\n- `packages/interaction/user-approval/src/index.ts`; consumers in `packages/core/tools` and the sandboxed bash tool; README \"Known Limitations\" states requests carry no tool arguments.\n- Openworker passes the full `PermissionRequest` (tool + args) to its approvers (`coworker/engine.py` `_authorize`).\n","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:29Z","created_by":"Sereja","updated_at":"2026-08-24T12:46:29Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.5","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:29Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28.3","title":"MCP: remote servers + OAuth design","description":"## Question\n\nDesign remote (streamable-HTTP) MCP server support with OAuth, on top of the research findings:\n1. Config format: `url`/`headers`/`auth` fields on the server def; validation rules.\n2. Sign-in flow in the Web UI: loopback callback vs deep-link/redirect; where the pending-auth slot lives; explicit-connect-only interactivity (background paths must never hijack the browser).\n3. Token storage: a credentials profile per server (`mcp-oauth:<server>`-style)? Refresh handling?\n4. Non-interactive policy: what happens on expired tokens during session start / unattended runs (openworker: skip the server, raise `InteractiveAuthRequired`-equivalent).\n\nBlocked by the research ticket — read its resolution comment first.\n\n## Context\n\n- `packages/mcp/mcp-client` already speaks streamable-HTTP (`url`/`headers`) without auth.\n- Openworker reference: `coworker/mcp/oauth.py` (OAuth 2.1 + PKCE + DCR), loopback route on the sidecar, single-slot pending future.\n","status":"closed","priority":2,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:28Z","created_by":"Sereja","updated_at":"2026-08-24T13:23:02Z","started_at":"2026-08-24T13:15:54Z","closed_at":"2026-08-24T13:23:02Z","close_reason":"Design settled: oauth|bearer-ref auth config, web-host loopback callback, single-slot explicit-connect sign-in, GrantRecord mcp/<server>, skip-and-surface + instant park on dead auth","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.3","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:27Z","created_by":"Sereja","metadata":"{}"},{"issue_id":"dsh-t28.3","depends_on_id":"dsh-t28.2","type":"blocks","created_at":"2026-08-24T15:46:59Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":1,"parent":"dsh-t28"},{"id":"dsh-t28.2","title":"Research: TS MCP SDK remote/OAuth capabilities + DSH token storage","description":"## Question\n\nCollect the facts the OAuth design ticket needs:\n1. What does `@modelcontextprotocol/sdk` (TypeScript) support today for remote servers: streamable HTTP transport, OAuth 2.1 + PKCE, Dynamic Client Registration, token storage/refresh hooks? Exact APIs and versions.\n2. What does the MCP specification require/recommend for remote-server auth (authorization spec, DCR, callbacks)?\n3. How do Claude Code, Codex CLI, and openworker configure remote MCP auth — config keys, sign-in flow (loopback vs deep link), token storage? (openworker: `coworker/mcp/oauth.py` — OAuth 2.1 + PKCE + DCR, loopback callback, SecretStore.)\n4. What does DSH's `packages/credentials` offer for storing and refreshing tokens (record schema, secret store, public API), and is there an existing browser-driven OAuth flow anywhere in the repo?\n\n## Context\n\n- Target repo: `/Users/sergeykostrov/pets/harnesses-ai/deepseek-harness` (`packages/credentials`, `packages/mcp/mcp-client`).\n- Source reference: `/Users/sergeykostrov/pets/harnesses-ai/openworker` (`coworker/mcp/oauth.py`, 240 LOC).\n- Remote servers + OAuth are in scope (Q11). This ticket gathers facts only; the design decision is a separate grilling ticket blocked by this one.\n","status":"closed","priority":2,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:27Z","created_by":"Sereja","updated_at":"2026-08-24T12:51:19Z","started_at":"2026-08-24T12:51:19Z","closed_at":"2026-08-24T12:51:19Z","close_reason":"Closed","labels":["wayfinder:map","wayfinder:research"],"dependencies":[{"issue_id":"dsh-t28.2","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:27Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":1,"parent":"dsh-t28"},{"id":"dsh-t28.1","title":"MCP: per-tool gating — config surface and semantics","description":"## Question\n\nWhere do per-server tool allow/deny lists live, and how do they behave at runtime? Decide:\n1. Config surface: `cordis.yml` plugin fields on `mcp-client` instances (e.g. `tools.include`/`tools.exclude`), a `ctx.settings` namespace, or both (declarative base + user overrides)?\n2. Semantics: include/exclude as allow/deny sets; interaction with `tools/list_changed` generation rebuilds; what happens to a named tool that disappears/reappears on the server.\n3. Runtime toggling without a process restart, and how changes respect the deterministic-composition / KV-cache-prefix logging rule (tool gating changes model-visible input).\n4. Migration/validation story for existing whole-server configs (fail-loud, no hidden defaults).\n\n## Context\n\n- `packages/mcp/mcp-client/` registers every discovered tool on `ctx.tools`; server-qualified names `mcp__<server>__<tool>`; generation replace/rollback already exists for `tools/list_changed`.\n- `packages/guard/repeat-tool-reminder/` has wildcard `include`/`exclude` tool-name patterns (predicates over the live registry) — vocabulary exists, but nothing scopes it per MCP server.\n- cordis.yml tool rows support per-preset `disabled` (see `packages/subagent/` README) — a second existing gating mechanism to reconcile with.\n- `packages/settings/settings/` (`ctx.settings`) has schema/base/user layering — the obvious home for user-side toggles.\n- Openworker parity: per-server `enabled`, `include_tools`/`exclude_tools`, `requires_approval` in `mcp.json` (`coworker/mcp/config.py`).\n\n## Already decided\n\nPer-tool control, settings namespace, and UI are all in scope (map Notes, Q4/Q11). This ticket decides the shape, not whether.\n","status":"in_progress","priority":2,"issue_type":"task","assignee":"Sereja","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:26Z","created_by":"Sereja","updated_at":"2026-08-24T14:09:23Z","started_at":"2026-08-24T14:09:23Z","labels":["wayfinder:grilling","wayfinder:map"],"dependencies":[{"issue_id":"dsh-t28.1","depends_on_id":"dsh-t28","type":"parent-child","created_at":"2026-08-24T15:46:26Z","created_by":"Sereja","metadata":"{}"}],"dependency_count":0,"dependent_count":1,"comment_count":0,"parent":"dsh-t28"},{"id":"dsh-t28","title":"Wayfinder: port automations, inbox, and MCP from openworker into DSH","description":"## Destination\n\nThree openworker features working in the ruttybob/deepseek-harness fork as additive, merge-friendly plugins:\n\n1. **MCP per-tool control** — include/exclude per server, settings + UI, remote (HTTP) servers with OAuth.\n2. **Inbox** — durable cross-session queue where unattended runs park approval asks (tool-call args visible); human resolves from the Web UI.\n3. **Automations** — cron/one-shot scheduled unattended runs in the web host; fresh session + transcript per run; runs list in UI.\n\nThe map is done when the route is clear: every open decision resolved into a spec an execution session can build from. Per Notes, execution may be carried into the map as task tickets once a feature's decision tickets close.\n\n## Notes\n\n**Repos.** Source: `/Users/sergeykostrov/pets/harnesses-ai/openworker` (Python; `coworker/automation/`, `coworker/inbox.py`, `coworker/inbox_routing.py`, `coworker/mcp/`, glue in `coworker/server/manager.py`). Target: `/Users/sergeykostrov/pets/harnesses-ai/deepseek-harness`.\n\n**Porting stance (decided at charting).** Keep openworker *semantics* — run-once catch-up, skip-on-overlap, resolve-once inbox items idempotent by `(session, tool_call_id)`, approval-gated consequential actions, per-task allow-always grants — but implement in DSH idioms on existing seams. Do not port SQLite/JSON-file storage by default.\n\n**DSH rules that bind every ticket.**\n- \"Plugins, not loop changes\": new behavior lands as plugins; extension plugins depend on Service Definitions, never providers.\n- New `SessionEventMap` members require TS + Python SDK updates in the same PR; prefer `storage-domain` records when events aren't needed.\n- Product-visible behavior needs a keyless runnable example.\n- Config is validated, fail-loud, no hidden defaults.\n\n**Key seams found by the DSH survey.**\n- `packages/bundle/headless` — fresh persisted agent, one message, exit (run executor candidate).\n- `packages/host` — web host (`dsh web`), the only always-on process; scheduler home (decided).\n- `packages/interaction/user-approval` — `ctx.approval` waterfall, fail-closed, open-turn-only, no args in requests, one-shot grants only.\n- `packages/mcp/mcp-client` — stdio/HTTP client, `mcp__<server>__<tool>`, reconnect + generation resync; whole-server config only.\n- `packages/settings` (`ctx.settings`), `packages/credentials`, `packages/storage` + `storage-domain`, `packages/client` (`ui-*` slot plugins), `packages/experimental/agent-team` (durable mailbox pattern worth copying).\n\n**Standing decisions from charting (pre-map).**\n- Q1 Destination is working code; execution tickets may enter the map after decisions close.\n- Q2 Feature order: MCP → Inbox → Automations (map is parallel where unblocked).\n- Q4 Full GUI for all three features is in scope from the start.\n- Q5 Merge-friendly: additive plugins, minimal core edits.\n- Q6 Private fork; keep code upstream-PR-clean.\n- Q7 Each fire = a fresh headless run (new session + transcript); \"continue last run\" is manual, later.\n- Q8 Scheduler lives in the web host; no separate daemon.\n- Q9 Inbox = new plugin + sanctioned minimal edits to `user-approval` core.\n- Q10 v1 grants = allow-always per tool per automation (full \"tool target\" grammar is fog).\n- Q11 Remote HTTP MCP servers with OAuth ARE in scope.\n- Q12 v1 result delivery = runs list in Web UI only; external notifications are fog.\n\n**Skills.** HITL tickets: `/grilling` + `/domain-modeling`. Research tickets: `/research`.\n\n**Tracker conventions.** Beads (`bd`). Tickets are children of this issue; blocking via native dependencies (`bd dep`). Claim by assigning before work. Refer to tickets by title, not bare id.\n\n## Decisions so far\n\n- **Research: TS MCP SDK remote/OAuth capabilities + DSH token storage** (dsh-t28.2) — SDK 1.29.0 ships the full remote-auth stack (streamable HTTP + OAuth 2.1 + PKCE + DCR + refresh + RFC 9728/8707); DSH only needs an `OAuthClientProvider` impl — GrantRecord `mcp/<server>` for storage, `ctx.authorization` for the explicit-connect browser flow; `packages/mcp/mcp-client/src/transport.ts` is the one-line insertion seam; config carries refs, never secrets.\n\n## Not yet specified\n\n- Full standing-grant grammar (`tool target` scoping, server-side validation, audit trail) beyond allow-always-per-tool-per-automation — revisit after Inbox + Automations domain decisions land.\n- External notifications for run completion (Telegram/webhook) — parked by Q12; graduates once the run pipeline exists.\n- Unattended toggle for *interactive* sessions (park asks mid-conversation, openworker parity) — may graduate from the Inbox domain ticket.\n- Profile/workspace scoping of automations and MCP servers in a multi-profile host — revisit during the domain-model tickets.\n- Python-SDK parity cost whenever a spec introduces new session events — each spec ticket must price this in or avoid events.\n\n## Out of scope\n\n- MCP **server** role (DSH exposing itself as an MCP server).\n- MCP Resources & Prompts surfaces — client *tools* only in this effort.\n- Inbox channel mirrors (Slack/Telegram transports) — DSH has no connector infra; in-app inbox only.\n- Porting openworker's 25+ native connectors — MCP is the only integration path here.","notes":"- **MCP: remote servers + OAuth design** (dsh-t28.3) — auth: `oauth` | `bearer`+CredentialRef on streamable-http (fail-loud validation); loopback callback on the web host, single-slot explicit-connect-only sign-in; GrantRecord `mcp/<server>` `{version,tokens,clientInformation}`; skip-and-surface for unattended runs, instant park on mid-session UnauthorizedError.\nSpec published from this map (MCP branch, OAuth design resolution): \"Remote MCP servers: OAuth and bearer auth\" — epic, ready-for-agent, linked related.","status":"open","priority":2,"issue_type":"task","owner":"kostrovsd@gmail.com","created_at":"2026-08-24T12:46:25Z","created_by":"Sereja","updated_at":"2026-08-24T13:48:23Z","labels":["wayfinder:map"],"dependency_count":0,"dependent_count":0,"comment_count":0}],"comments":{"dsh-ood.3":[{"id":"01a03b0d-2521-7806-ad2a-eb4de1fc897d","issue_id":"dsh-ood.3","author":"Sereja","text":"Resolved by read-only research. Theme flow: the Host bakes the durable `ui-theme` preference into an inline body script (`bootThemeInjection`, placed before the shell mount, so pre-first-paint) that resolves `system` via `prefers-color-scheme` and toggles the boolean attribute `data-ds-dark-theme` on `<body>` plus root `color-scheme`; there is NO media-query CSS — all palette switching rides the `body` / `body[data-ds-dark-theme]` token block pair in `design-platform.css` (static palette + alias layer, each in light/dark copies). After plugin activation, ui-layout's `ThemePresenter` re-applies the same DOM fields from `theme/change` snapshots, and the Appearance row/store mirror the persisted preference (never the resolved theme) through `settings-store.ts` revision-guarded `sync`.\n\nFonts: follow the KaTeX precedent exactly — woff2 files under `packages/client/ui-theme/src/styles/fonts/` with a `geist.css` imported as a PLAIN CSS side-effect inside the apps/web Vite graph (never the `?inline` `installThemeStyles` path, whose url()s are never rewritten); `vite.config.ts`'s existing FONT_EXTENSIONS/assetFileNames rule already emits hashed fonts to `assets/fonts/`. Prepend `Geist`/`Geist Mono` to the two base.css font tokens; all `packages/client/*` then inherit via `var(--dsw-font-family)`.\n\nAlso captured: 12-entry token-bypass list (hardcoded hex/rgb in CSS Modules, katex.tsx inline #cc0000, ansi.ts rgb strings, shiki hex tokens) and exact rebuild/verify commands (`pnpm run build:web`, `pnpm run dev:web` three-stage watch, smoke-real.e2e + lifecycle-chrome theme scenario screenshots).\n\nFindings: branch `research/dsh-theme-mechanics`, file `research-notes/dsh-theme-mechanics.md` (274 lines, file/line anchors throughout).\n","created_at":"2026-08-25T22:31:52Z"}],"dsh-ood.2":[{"id":"01a03b0b-c08d-709c-a2ae-661ed745408c","issue_id":"dsh-ood.2","author":"Sereja","text":"Extracted the full OpenWorker token set from DESIGN.md (canonical) with implementation cross-check (surfaces/gui styles.css + tailwind.config.js), and mapped it onto the DSH --dsw-static-* scale.\n\nGist: OW defines 21 color tokens per theme (light+dark mirrored: Paper/Panel/Ink/Muted/Faint/Hairline±Strong/Work Cobalt+soft/Signal Green·Amber·Red with soft+line tints/Deep Teal with soft+line), a Geist 7-step type scale (22/18/15/13/12/11·uppercase +0.04em/10px, weights 600/500/400), radii 8/14/9999, 1px hairline borders with no resting shadows (float-only 0 1px 2px rgba(0,0,0,.2)), soft-tint badge recipe, spring-100/20 motion. ~35 NEW --dsw-static-* vars needed (colors, type, radius, shadow, motion — DSH has no type/motion tokens today). Kill-list: all 12 --dsw-static-blue-*, all 11 --dsw-static-deepseek-*, collapse of the neutral-bluish vs neutral duplicate gray ramps, vivid green/amber/red hues, alpha border-l1..l4. Key semantic mismatches: DSH blue/deepseek-for-meaning (links, focus, selection, info buttons, bubbles, label-primary-bluish) all collapse to Work Cobalt as the single accent; status becomes soft-tinted badges only.\n\nNoted divergences (DESIGN.md wins): impl muted #4d535c vs #5B616B, faint #6f7680 vs #9AA1AA, accent #2563eb vs #2E62D6 (dark #4c8dff vs #8CAAF2), warn ink #92400e vs #B45309, impl uses Inter (banned) and a 20/16/14/13/12/11 scale vs Geist 22/18/15/13/12/11/10.\n\nFindings: branch research/ow-design-extract, file research-notes/ow-design-extract.md.\n","created_at":"2026-08-25T22:30:21Z"}],"dsh-ood.1":[{"id":"01a03b0b-fd02-7a44-b96c-2f4dbd059dbf","issue_id":"dsh-ood.1","author":"Sereja","text":"Answer summary (dsh-ood.1): DSH web GUI = apps/web thin Vite entry + 25 styled packages (106 CSS-module files, 16,302 LOC) + ui-theme global token sheets (design-platform.css 338 LOC with --dsw-static-*/--dsw-alias-* + dark block, scrollbar.css, shiki.css, gradient-shadow-text.css, base.css; 706 LOC total). Styling discipline is strong: modules reference var(--dsw-alias-*) 1,321x vs only 12 direct static refs; ~40 non-comment hardcoded color literals total (boot page 12, JsonTree 12, workspace Rows 6, InputBar 4, HoverCard 3, trajectory shadows 2, plus singles). Dark corners: shiki colors from ui-theme shiki.css (--shiki-token-* pairs); KaTeX inherits label color (no own palette); scrollbars fully token-driven via scrollbar.css; markdown via ui-primitives markdown/* + --dsw-alias-markdown-*. Restyle split: token-reachable ~80-90% of visual surface by editing the 5 ui-theme sheets (alias remap is the single biggest lever); per-package edits needed for boot-page.module.css, JsonTree palette, ansi.ts, ~40 hardcoded literals, and any geometry/spacing/typography change (all 106 module files, 62% concentrated in ui-primitives 4.5k + ui-conversation 2.9k + ui-trajectory 2.6k LOC).\nFindings: branch research/dsh-ui-inventory, file research-notes/dsh-ui-inventory.md\n","created_at":"2026-08-25T22:30:37Z"}],"dsh-01e.2":[{"id":"01a03ccb-e3bc-7dde-8610-8be05e5783c5","issue_id":"dsh-01e.2","author":"Sereja","text":"Resolution (confirmed with the driving dev):\n1. Canonical data source: `bd list --all --json -n 0` — full issue objects with inline dependencies[]/parent; comment bodies fetched per-issue via `bd show --json --include-comments` only on selection. `bd graph` views stay display formats; if the UI wants topological layers, the host computes them from the JSON edges.\n2. Package shape: one host plugin package exposing a single cwd-scoped service (list/show) + one client UI package. No Service Definition/Provider/Consumer split — exactly one consumer (the panel) and one backend (bd) exist today; extract the seam when a second tracker backend appears.\n3. Liveness and wire: v1 = client pull-poll over the existing client-to-host RPC while the panel is visible (default 5s, paused when hidden or closed); the host spawns bd per call (~0.31 s locally, flat process-startup cost). fs.watch on .beads/last-touched plus a downlink push signal is a deferred optimization if polling cost ever matters.\n4. Config and failures: validated Config with bdBinary (default 'bd' from PATH) and pollIntervalMs (default 5000); bd missing = error state with install hint; no .beads/ in session cwd = empty state; the store follows the session cwd.\nGaps honored from the bd research: always -n 0 (default limit 50), treat conditionally-absent fields (assignee/parent/started_at) as null, argv-style invocation (no shell string), pin to documented JSON fields only.","created_at":"2026-08-26T06:39:50Z"}],"dsh-01e.3":[{"id":"01a03d54-9de7-78e1-a7d6-c138d2150454","issue_id":"dsh-01e.3","author":"Sereja","text":"Resolution (confirmed with the driving dev; direction redirected mid-ticket):\n\n**REDIRECT:** the panel is not a fourth AppFrame column — it is a tab in the existing conversation view ring (Chat / Trajectory / Beads). AppFrame, columns.ts, layout stores, ctx.layout, and ui-sidebar are untouched.\n\n1. **Slot:** one entry in the existing `conversation.view` list slot (session scope, already declared by ui-conversation's body entry). Registration follows the ui-trajectory pattern: `ctx.slots.inject('conversation.view', ...)` with `id: 'beads'`, `order: 20` (after chat=0, trajectory=10), locale-bound label \"Beads\" (proper noun, identical in zh and en; translating to 「任务」would collide with tasks/todo vocabulary). Owner props stay empty; per-session view state (selected ticket, list/graph mode) lives in the plugin's own entry store (chat-store pattern). No child slots in v1 — one package owns the whole view; no second consumer exists for internal seats.\n\n2. **Availability (no `.beads/` in session cwd):** the tab renders grey and non-clickable with a tooltip (「此仓库没有 beads数据」). Mechanism: a `disabled()` registration option projected into `ViewTab.disabled`; the tab strip renders disabled entries without onClick; a re-registration on availability flip bumps the slot version and redraws. Default before the async host probe answers: disabled — in a beads repo the tab flashes grey briefly then activates (probe fires on session attach, often before first strip render); a clickable ghost in non-beads repos is avoided. If the store disappears mid-session while Beads is the active view: auto-return to Chat (`resolveActiveView` skips disabled tabs; the persisted view id survives, so the tab reactivates when the store returns).\n\n3. **Blank-session coverage:** the view ring exists only for non-blank sessions; the board is reachable only inside a live session. Accepted — the wayfinder flow always runs inside an agent session (the store follows the session cwd).\n\n4. **Package:** `@deepseek-ai/dsh-client-ui-beads` (one UI plugin package: tab + list/graph/detail inside). Chinese product copy, semantic `--dsw-*` alias tokens.\n\n5. **Regression surface:** one new package + one registration + locale dictionaries. ui-conversation gains the `ViewTab.disabled` projection and the disabled-skip in `resolveActiveView` (small contract extension, snapshotted). Assembled browser output changes (third tab) → one intentional `DSH_SNAPSHOT=refresh`, replay thereafter.\n\n**Superseded by the redirect:** fourth-column geometry, concession-chain position, TASKS_* clamps, two-width reading mode, details/tasks coexistence, sidebar-footer toggle, persistence/deep links (nothing existed to preserve — the layout store is transient and stays transient in v1).\n","created_at":"2026-08-26T09:09:11Z"}],"dsh-01e.1":[{"id":"01a03cca-17dd-7d5d-94fd-b1b3a4f4ecde","issue_id":"dsh-01e.1","author":"Sereja","text":"Resolution: use @dagrejs/dagre v3 (3.1.1, MIT, ESM 48.6 KB, one internal dep @dagrejs/graphlib) in dependencies, bundled privately into the panel plugin's lib/client.js; rendering stays ours (React SVG, typed edges blocks vs parent-child, --dsw-* tokens). Deletes ~150 lines of owned layout code and their 100%-coverage obligation — the dependency-over-hand-rolling rule applies squarely. Rejected: elkjs (1.61 MB GWT-transpiled, no ESM exports, kieler/elkjs#6), cytoscape/vis-network (1.1 MB+ imperative canvas libs fighting the slot system), @xyflow/react (canvas takeover, overkill for a read-mostly 50-node panel). Fallback ladder if the prototype fails: d3-dag (142 KB ESM, 4 runtime deps), then the incumbent hand-rolled topological-column layout (~150 lines, full coverage). Evidence: bundlephobia @dagrejs/dagre@3.1.0, mermaid flowchart engine, React Flow auto-layout docs.","created_at":"2026-08-26T06:37:52Z"}],"dsh-ood.4":[{"id":"01a03b50-939f-7c63-886d-e1c9cc51d428","issue_id":"dsh-ood.4","author":"Sereja","text":"## Resolution — locked mapping\n\nDecided 2026-08-26, grilling over the drafted table (inputs: research/ow-design-extract, research/dsh-ui-inventory, research/dsh-theme-mechanics).\n\n1. **Canon source: DESIGN.md wins** wherever the OW implementation diverges. Locked values: Work Cobalt `#2E62D6` light / `#8CAAF2` dark (not blue-600 / #4c8dff); Muted Slate `#5B616B` / `#9AA1AB`; Faint Steel `#9AA1AA` / `#62686F`; Amber ink `#B45309`. Each divergence gets a source-comment in design-platform.css.\n\n2. **Ramps die in one stroke.** `--dsw-static-blue-*` (12 vars), `--dsw-static-deepseek-*` (11), and the duplicate gray ramps retire in the same foundation change as the OW tokens land. One OW-anchored Zinc ramp survives (paper / panel / ink / muted / faint / hairline / hairline-strong + supporting steps); the whole `--dsw-alias-*` layer re-points onto it atomically. No staged coexistence, no surviving logo-blue tokens.\n\n3. **Status tokens are quads**: `ink / soft / line` for ok (green), warn (amber), danger (red), info (teal) in both themes, token-for-token. Missing DESIGN.md values (amber line, red soft, teal where absent) derive via the OW badge recipe — soft tint bg + tinted 1px border + deep ink text. Saturated status fills are banned outright; checked toggles are Cobalt, never green.\n\n4. **New layers as composite tokens**: seven `--dsw-static-text-*` steps (22/18/15/13/12/11/10 px with the locked weight/line-height/tracking triples, usable as `font:` shorthand) + `--dsw-static-radius-control/panel/badge` (8/14/9999px) + `--dsw-static-shadow-float` (floating layers only; resting shadows die) + motion vars (≈130ms hover, spring-approximating cubic-bezier — true springs are JS, out of token scope).\n\n5. **Assistant chat bubble**: neutral solid `#E9EBF0` light / `#2E3138` dark with ink text (new `--dsw-static-solid`/`-on-solid`). Cobalt is never a large fill. Current deepseek-50/200 bubble tokens die with the ramp.\n\n6. **Scope guard — the 12 token-bypass sites from dsh-ood.3 are NOT executed by this mapping.** alias re-pointing only; boot-page, JsonTree, HoverCard, OnboardingSurface, InputBar, ContextMeter, Rows, TrajectoryTable, katex-error, ansi.ts, shiki.css stay literal. Deferred to a post-prototype cleanup pass (map fog entry created).\n","created_at":"2026-08-25T23:45:32Z"}],"dsh-ood.5":[{"id":"01a03d69-6e19-753f-8317-0bbc51b3558a","issue_id":"dsh-ood.5","author":"Sereja","text":"## Resolution — prototype reacted to\n\nVerdict (human, 2026-08-26 session): flipped through all four variants and took the **maximum** — locked token mapping + Geist/Geist Mono + the density probe (tracking, antialiasing, 130ms motion, cobalt focus-ring). Reaction quote: «ок, пойдёт».\n\nArtifact: dynamic Cordis client plugin `owsty-1/pkg-2`, run live against the web GUI — floating variant bar in `shell.overlay` switching token layers via `ctx.theme.overrideTokens` (`{light,dark}` pairs, both themes live under the stock switcher). Captured on branch `research/ow-restyle-proto` → `research-notes/ow-restyle-proto/` (client.js + README).\n\nLimits recorded for the rollout tickets:\n\n- Runtime token layers prove color, typography, and motion only. Geometry density (radii 8/14, paddings, hairline input borders) is not token-reachable in the live GUI (CSS Modules hash class names); the foundation rollout PR must carry it.\n- The 12 token-bypass sites (dsh-ood.3) were not visually judged — the map's fog entry stands.\n- Geist arrived via Google Fonts CDN in the prototype; production self-hosts woff2 (dsh-ood.3, unchanged).\n\nMap updates: the \"acceptance criteria per screen\" fog folded into \"Feasibility verdict and PR-series plan\" (dsh-ood.7 already owns the screenshot-audit checklist); rollout fog now waits on dsh-ood.6 only.","created_at":"2026-08-26T09:31:55Z"},{"id":"01a03d70-d503-72bb-aa87-820e670f5b98","issue_id":"dsh-ood.5","author":"Sereja","text":"## Resolution addendum — density probe defect found after close\n\nHuman report (same session, after the verdict): under the max variant the prompt-editor caret sat ~one character ahead of the typed text. Cause class: the probe's global `body { letter-spacing: -0.005em; text-rendering: optimizeLegibility }` — both are known caret-positioning disturbers in editable fields (the DSH prompt editor is a decorated textarea).\n\nProbe v3 (pkg-3) drops both properties; antialiasing, 130ms motion, and the cobalt focus ring stay. Carried to the rollout tickets: **never apply global letter-spacing / text-rendering to editable surfaces** — scope tracking to non-editable text (headings, labels, micro-labels per the OW scale) or omit it.","created_at":"2026-08-26T09:40:00Z"}],"dsh-t28.3":[{"id":"01a033f0-4ca4-7ac1-974d-4c57b21b3464","issue_id":"dsh-t28.3","author":"Sereja","text":"**Resolution (design decisions):**\n\n1. **Config surface** — `streamable-http` server def gains `auth`:\n   - `auth: { type: 'oauth' }` — browser OAuth 2.1 + PKCE + DCR via the SDK's `OAuthClientProvider`.\n   - `auth: { type: 'bearer', credential: CredentialRef }` — static token resolved through `ctx.credentials`; never inline secrets.\n   - Absent `auth` = anonymous (today's behavior).\n   - Validation (fail-loud at plugin load): unknown `type`; OAuth URLs must be `https://` (`http` only for loopback hosts); `auth.type=bearer` combined with `headers.Authorization` rejected as ambiguous.\n   - No `scopes`/`clientMetadata` overrides in v1 — fog until a real server demands them.\n\n2. **Sign-in flow** — loopback redirect onto the live web host: `GET http://127.0.0.1:<port>/mcp/oauth/callback`, state-gated (CSRF + stray-hit rejection), single global pending slot. Explicit-connect-only: started from the MCP settings UI; background paths (session start, tool listing, reconnect) never open the browser. 300 s flow timeout; re-sign-in invalidates the existing grant and replaces it.\n\n3. **Token storage** — one `GrantRecord` per server at `credentialKey('mcp', '<server>')`, payload `{ version: 1, tokens, clientInformation }` (SDK tokens + DCR client info atomically). Refresh is SDK-automatic via `saveTokens`; a dead refresh token means needs-sign-in. Sign-out = `deleteRecord` + disconnect. Caveat: server name is the credential identity — profiles reusing a name share the grant (profile scoping stays fog).\n\n4. **Non-interactive policy** — skip-and-surface: at start of unattended (headless) runs, a server with dead/missing auth is skipped with a surfaced note (\"server X skipped: sign-in required\"); the run continues. Mid-session `UnauthorizedError` parks the server immediately (needs sign-in, no retry-budget burn); reconnect resumes only after a fresh sign-in.\n\n**Implementation seams (verified in code):** `packages/mcp/mcp-client/src/transport.ts` gains `authProvider` construction (one-option seam on `StreamableHTTPClientTransport`); `connection.ts` must special-case `UnauthorizedError` (park, not backoff — the supervisor today is auth-blind and would burn its attempt budget); the provider lives plugin-side over `ctx.authorization` (`registerFlow` + `notify({url})`) + `ctx.credentials` records. No OAuth/PKCE code exists in the repo today.","created_at":"2026-08-24T13:23:01Z"}],"dsh-t28.2":[{"id":"01a033d3-44bf-72a7-83aa-ed7a32d87592","issue_id":"dsh-t28.2","author":"Sereja","text":"**Resolution (research findings):**\n\n# dsh-t28.2 — TS MCP SDK remote/OAuth capabilities + DSH token storage\n\n## 1. @modelcontextprotocol/sdk (TypeScript) — installed version 1.29.0\n\nLocation: `node_modules/.pnpm/@modelcontextprotocol+sdk@1.29.0_zod@4.4.3/node_modules/@modelcontextprotocol/sdk` (consumed via `packages/mcp/mcp-client` and `packages/subagent/subagent-claude-code`).\n\n**Streamable HTTP client transport — yes, built in.**\n- `StreamableHTTPClientTransport` (`dist/esm/client/streamableHttp.d.ts`), already used by DSH today in `packages/mcp/mcp-client/src/transport.ts`. Also `SSEClientTransport` (deprecated) and a newer `WebSocketClientTransport` in `dist/esm/client/`.\n\n**OAuth 2.1 + PKCE + DCR + refresh — yes, all built into the client SDK** (`dist/esm/client/auth.d.ts`, `auth.js`):\n- `interface OAuthClientProvider` — the one integration seam: `redirectUrl`, `clientMetadata`, `clientInformation()/saveClientInformation()` (DCR persistence), `tokens()/saveTokens()` (token storage), `redirectToAuthorization(url)`, `saveCodeVerifier()/codeVerifier()` (PKCE), optional `state()`, `addClientAuthentication`, `validateResourceURL` (RFC 8707), `invalidateCredentials`, `prepareTokenRequest` (grant customization, incl. client_credentials), `saveDiscoveryState`.\n- `auth(provider, options)` — end-to-end driver: RFC 9728 protected-resource discovery → auth-server metadata discovery → DCR (`registerClient`) → authorize URL with PKCE → code exchange (`exchangeAuthorization`) → `refreshAuthorization`.\n- Granular exported helpers: `discoverOAuthProtectedResourceMetadata`, `discoverAuthorizationServerMetadata`, `discoverOAuthServerInfo`, `registerClient` (RFC 7591 DCR), `startAuthorization`, `exchangeAuthorization`, `refreshAuthorization`, `prepareAuthorizationCodeRequest`, `selectResourceURL`, `UnauthorizedError`.\n- Wiring: `new StreamableHTTPClientTransport(url, { authProvider })` — the transport auto-refreshes expired tokens and calls `redirectToAuthorization` then throws `UnauthorizedError` from `connect()` (documented in `streamableHttp.d.ts` ~lines 60–73).\n- `dist/esm/client/auth-extensions.d.ts`: ready-made providers `ClientCredentialsProvider` (client_secret_basic) and `PrivateKeyJwtProvider` + `createPrivateKeyJwtAuth` — machine-to-machine; **no ready-made interactive/browser provider** (that's app-defined via `OAuthClientProvider`).\n\n**Conclusion: the SDK supplies the entire OAuth protocol; the app only supplies storage, browser opening, and a loopback/deep-link callback.** Repo: https://github.com/modelcontextprotocol/typescript-sdk\n\n## 2. MCP Authorization specification\n\nSpec: https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization (current draft revisions add RFC 9728 resource indicators). Key requirements/recommendations:\n- **OAuth 2.1** is the required authorization framework for remote HTTP servers; **PKCE (RFC 7636) required for all clients** (public clients use it instead of client secrets).\n- Servers issue `401` + `WWW-Authenticate` on the MCP URL; clients perform **RFC 9728 Protected Resource Metadata** discovery (`/.well-known/oauth-protected-resource`) then **Authorization Server Metadata** discovery; **resource indicators (RFC 8707)** bind tokens to the resource.\n- **Dynamic Client Registration (RFC 7591)** is recommended so users need no pre-registered client id/secret; public clients should not use client secrets.\n- Callback/redirect: clients **must** support loopback/`localhost` redirects (no prior registration needed); deep-link/custom-scheme redirects allowed where the platform supports them; `state` for CSRF.\n\n## 3. How others configure remote MCP auth\n\n**Claude Code** (https://code.claude.com/docs/en/mcp): `claude mcp add --transport http <name> <url>` (also `sse`, and `http` servers in `.mcp.json`). On first use it runs an automatic OAuth flow in the browser against the server (spec flow above); `/mcp` shows per-server auth status and a startup notice appears when servers need authentication; tokens are stored in the OS keychain (macOS Keychain); servers requiring pre-registered redirect URIs must list Claude's documented redirect URI conventions.\n\n**Codex CLI** (github.com/openai/codex; community doc mirror https://mintlify.wiki/openai/codex/configuration/mcp-servers): `mcp_servers` in `config.toml` supports stdio and (experimental) `experimental_use_rmcp_client = true` with `url = ...`; auth is **static bearer tokens**, either inline `bearer_token_static = \"...\"` or via `bearer_token_env = \"VAR_NAME\"`. No built-in browser OAuth/DCR flow today.\n\n**openworker (local)** — `openworker/coworker/mcp/oauth.py` + `mcp/config.py`:\n- Config: standard `mcpServers` JSON, layered `~/.config/coworker/mcp.json` + trusted `<workspace>/.coworker/mcp.json`; per-server auth mode key `\"oauth\"` → browser OAuth 2.1 + PKCE + DCR. Plain-text `mcp.json` never holds tokens.\n- Flow: Python SDK's `OAuthClientProvider` (equivalent of the TS seam) drives the spec; app supplies (1) token persistence, (2) browser open (`webbrowser.open`), (3) callback: **loopback** `GET /mcp/oauth/callback` on the sidecar (`http://127.0.0.1:$COWORKER_PORT`, default 8765) resolving a **single-slot pending future** (one sign-in at a time), gated by matching `state` (`secrets.compare_digest`) against stray local hits. 300 s flow timeout.\n- Storage: `SecretStore` profile `mcp-oauth:<server>` holding both `tokens` (access/refresh) and the DCR `client_info` (reused across sign-ins); 0600 file.\n- Notable invariant: `InteractiveAuthRequired` — browser sign-in is explicit-connect-only; background code paths (engine turns, tool listing) raise instead of hijacking the browser (vendor refresh-token rotation, e.g. Atlassian, hit this in practice).\n\n## 4. DSH token-storage seams (local)\n\n**`packages/credentials`** (three sub-packages):\n- `credentials/` — the seam (`ctx.credentials`). Types: `CredentialRef` (POSIX env-name reference carried by config), `CredentialKey` = `<scope>/<id>` (scope = owning plugin's registered name). Record union: `ApiKeyRecord { kind:'api-key', key?, env? }` and **`GrantRecord { kind:'grant', payload: unknown }`** — an owner-opaque JSON blob that \"survives a JSON round trip\" and only the owning plugin can interpret: a natural fit for an OAuth token set + DCR client info. `CredentialProvider` (abstract Service) API: `resolve/describe/set/unset(ref)` for references and `readRecord/describeRecord/listRecords/modifyRecord(key,…)/deleteRecord(key)` for records; `modifyRecord` is the only write path. Events: `credentials/reference-updated`, `credentials/record-updated`.\n- `credentials-local/` — backend: `$DSH_HOME/.credentials.yaml` (0600-enforced, cross-process writer lock, atomic writes, chokidar hot-reload of external edits), layered under the inherited process env and above `.env` files. This is where GrantRecords persist.\n- `authorization/` — **`ctx.authorization`**, purpose-built for exactly this: plugin-owned flows that obtain a credential \"by asking a human — open this page, paste that code, pick an account\". `registerFlow({ key: CredentialKey, label, methods, run(session) })`; `AuthorizationSession` gives `notify({message, url})` (fire-and-forget, e.g. \"Continue in your browser\"), `prompt()`, and an `AbortSignal`; the doc example is literally an OAuth sign-in flow writing a record via credentials. Terminal event `authorization/settled(key, settlement)`.\n\n**Existing OAuth/PKCE in the repo: none.** Grep for `oauth|pkce|authorization code` across `packages/**.ts` finds only unrelated `authorize*`/`unauthorized` identifiers (subagent lineage checks, apiproxy) — no OAuth, PKCE, or browser-flow code exists yet.\n\n**`packages/mcp/mcp-client`** auth hooks today: config schema (src/index.ts) has `transport: 'streamable-http'` with `url: string` and `headers: Record<string,string>` (default `{}`); `transport.ts` passes them as `requestInit.headers` to `StreamableHTTPClientTransport` — **static headers only, no `authProvider`**. `connection.ts` is a reconnect supervisor (backoff, attempt budget, tool-registry sync) with no auth awareness.\n\n## Facts that constrain the design\n\n1. **The TS SDK already implements the full remote-auth stack** (streamable HTTP + OAuth 2.1 + PKCE + DCR + refresh + RFC 9728/8707 discovery) at v1.29.0 — no protocol code needs writing; only an `OAuthClientProvider` implementation (storage + browser redirect + callback) is required.\n2. **The transport seam is one option away**: `new StreamableHTTPClientTransport(url, { authProvider })`; `packages/mcp/mcp-client/src/transport.ts` is the exact insertion point (config gains an auth discriminator next to `headers`).\n3. **DSH already has both halves of the persistence contract**: `GrantRecord { kind:'grant', payload }` under `credentialKey('mcp', '<server>')` in `.credentials.yaml` via `credentials-local`, and the `ctx.authorization` flow surface (`notify({url})` + prompt + signal + `authorization/settled`) designed for browser sign-in — mirroring openworker's SecretStore profile `mcp-oauth:<server>`.\n4. **Callback choice is open**: the SDK leaves `redirectUrl` app-defined; openworker proves the loopback pattern (ephemeral local HTTP server, state-gated single-slot future); Claude Code uses OS keychain + its own redirect conventions; Codex avoids the problem with static bearer env refs.\n5. **Refresh is automatic, interactive sign-in is not**: SDK refreshes via `saveTokens`, but a dead refresh token requires `redirectToAuthorization` → `UnauthorizedError`; openworker's lesson (gate browser opening to explicit user-initiated connects, never background paths) should be adopted via the `ctx.authorization` session/abort semantics.\n6. **Config must carry references, not secrets**: DSH convention (CredentialRef in config, values in the store) rules out Codex-style inline tokens; `bearer_token_env`-style refs can map onto the existing `credentials` resolve seam for non-OAuth static-token servers.\n","created_at":"2026-08-24T12:51:19Z"}]}}</script>
+<script>
+'use strict'
+/* ================= data + derived model (bd ready semantics) ================= */
+const RAW = JSON.parse(document.getElementById('bd-data').textContent)
+const ISSUES = RAW.issues
+const COMMENTS = RAW.comments
+const byId = new Map(ISSUES.map(i => [i.id, i]))
+/* Group roots are epics — any issue that is a parent (wayfinder maps and plain
+   epics alike); the wayfinder:map label also rides on tickets in this store,
+   so it cannot identify maps. */
+const MAPS = ISSUES.filter(i => ISSUES.some(x => x.parent === i.id))
+
+function blockersOf(id) {
+  const i = byId.get(id)
+  return (i.dependencies || []).filter(d => d.type === 'blocks').map(d => d.depends_on_id)
+}
+function childrenOf(id) { return ISSUES.filter(i => i.parent === id).map(i => i.id) }
+const isClosed = i => i.status === 'closed'
+const inProg = i => i.status === 'in_progress'
+function bucketOf(i) {
+  if (isClosed(i)) return 'closed'
+  if (inProg(i)) return 'progress'
+  const bs = blockersOf(i.id)
+  return bs.some(b => !isClosed(byId.get(b))) ? 'blocked' : 'frontier'
+}
+const BUCKET_ZH = { frontier: '可认领', progress: '进行中', blocked: '已阻塞', closed: '已完成' }
+const looseIssues = ISSUES.filter(i => !i.parent && !MAPS.some(m => m.id === i.id))
+function mapTickets(mid) { return childrenOf(mid) }
+function fmtDate(iso) { return (iso || '').slice(0, 10) }
+function typeOf(i) { return ((i.labels || []).find(l => l.startsWith('wayfinder:') && l !== 'wayfinder:map') || '').slice(9) }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])) }
+
+/* ================= tiny DOM builder ================= */
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag)
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === 'class') el.className = v
+    else if (k === 'html') el.innerHTML = v
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v)
+    else if (k === 'style') el.style.cssText = v
+    else el.setAttribute(k, v)
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue
+    el.append(kid.nodeType ? kid : document.createTextNode(kid))
+  }
+  return el
+}
+
+/* mini markdown: headings, lists, bold, inline code, links */
+function md(text) {
+  const lines = String(text || '').split('\n')
+  const out = []
+  let list = null
+  const inline = s => esc(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+  const flush = () => { if (list) { out.push(h('ul', {}, list.map(x => h('li', { html: inline(x) })))); list = null } }
+  for (const ln of lines) {
+    const hd = ln.match(/^(#{2,3})\s+(.*)/)
+    const li = ln.match(/^\s*[-•]\s+(.*)/)
+    if (li) { (list ??= []).push(li[1]); continue }
+    flush()
+    if (hd) out.push(h(hd[1].length === 2 ? 'h2' : 'h3', { html: inline(hd[2]) }))
+    else if (ln.trim()) out.push(h('p', { html: inline(ln) }))
+  }
+  flush()
+  return out
+}
+
+/* ================= app state ================= */
+const S = {
+  variant: 'A',
+  dark: false,
+  dataState: 'ok', // ok | loading | empty | nobd | nobeads
+  tab: 'beads',     // chat | trajectory | beads
+  sel: null,
+  mapFilter: 'dsh-01e',
+  mode: 'list',     // variant A: list | graph
+  openGroups: new Set(MAPS.map(m => m.id).concat(['__loose'])),
+  focus: null,      // variant B: ego-focus ticket id
+  zoom: 1, panX: 0, panY: 0,
+  drawer: null,     // variant C: drawer ticket id
+  loadedComments: new Set(),
+  q: '',
+}
+const VARIANT_NAMES = { A: '双栏工作台 · list-first', B: '画布优先 · graph-first', C: '泳道看板 · board' }
+const app = document.getElementById('app')
+let vaListEl = null // search refreshes only the A list, keeping input focus
+function render() {
+  app.innerHTML = ''
+  vaListEl = null
+  document.body.toggleAttribute('data-ds-dark-theme', S.dark)
+  app.append(renderShell())
+}
+
+/* ================= shell: header + tabs + view area ================= */
+function renderShell() {
+  const beadsAvailable = S.dataState !== 'nobeads'
+  if (!beadsAvailable && S.tab === 'beads') S.tab = 'chat' // auto-return (dsh-01e.3)
+  const tabs = [
+    { id: 'chat', label: '对话' },
+    { id: 'trajectory', label: '轨迹' },
+    { id: 'beads', label: 'Beads', disabled: !beadsAvailable },
+  ]
+  const header = h('div', { class: 'shellHeader' },
+    h('div', { class: 'shellCrumb' }, 'deepseek-harness · 会话 dsh-01e.4'),
+    h('div', { class: 'tabs' }, tabs.map(t => {
+      const btn = h('button', {
+        class: 'tab' + (S.tab === t.id ? ' tabActive' : '') + (t.disabled ? ' tabDisabled' : ''),
+        onClick: () => { if (!t.disabled) { S.tab = t.id; render() } },
+      }, t.label)
+      if (t.disabled) btn.append(h('span', { class: 'tabTip' }, '此会话仓库没有 .beads/ 任务库'))
+      return btn
+    })))
+  const view = h('div', { class: 'viewArea' })
+  if (S.tab !== 'beads') {
+    view.append(h('div', { class: 'stateWrap' },
+      h('div', { class: 'big' }, S.tab === 'chat' ? '对话视图（真实 GUI 中为聊天记录）' : '轨迹视图（真实 GUI 中为调用轨迹）'),
+      h('div', { class: 'hint' }, '本原型只研究 Beads 标签页 — 点击上方「Beads」进入。')))
+  } else {
+    view.append(renderBeadsView())
+  }
+  return h('div', { style: 'display:flex;flex-direction:column;height:100%' }, header, view, renderDemoPanel(), renderSwitcher())
+}
+
+/* ================= beads view: dispatch by data state ================= */
+function renderBeadsView() {
+  if (S.dataState === 'loading') return h('div', { style: 'flex:1' },
+    h('div', { class: 'skel' }, Array.from({ length: 7 }, (_, k) => h('div', { class: 'skelRow', style: `width:${95 - k * 6}%` }))))
+  if (S.dataState === 'empty') return h('div', { class: 'stateWrap' },
+    h('div', { class: 'big' }, '任务库为空'),
+    h('div', { class: 'hint' }, '此仓库的 .beads/ 中还没有任务。运行 bd create 创建第一个任务。'))
+  if (S.dataState === 'nobd') return h('div', {},
+    h('div', { class: 'errBanner' }, '⚠',
+      h('div', {}, h('b', {}, '无法运行 bd'), h('div', { class: 'muted' }, '未找到 bd 命令 — 请安装 beads v1.2 或更高版本。')),
+      h('button', { class: 'btn btnGhost', style: 'margin-left:auto', onClick: () => { S.dataState = 'ok'; render() } }, '重试')),
+    h('div', { class: 'stateWrap' }, h('div', { class: 'big' }, '读取任务库失败'), h('div', { class: 'hint' }, '面板每 5 秒轮询一次；恢复安装后可手动重试。')))
+  if (S.dataState === 'nobeads') return h('div', { class: 'stateWrap' },
+    h('div', { class: 'big' }, '此会话仓库没有 .beads/ 任务库'))
+  return S.variant === 'A' ? renderA() : S.variant === 'B' ? renderB() : renderC()
+}
+
+/* ================= shared: rows / chips / detail / graph ================= */
+function statusDot(i) {
+  return h('span', { class: 'statDot st-' + bucketOf(i) })
+}
+function attnChip(i) {
+  const openBs = blockersOf(i.id).filter(b => !isClosed(byId.get(b)))
+  if (!openBs.length) return null
+  return h('span', { class: 'chip chipAttn', title: '阻塞于：' + openBs.join('、') }, '已阻塞 · ' + openBs.length)
+}
+function typeChip(i) {
+  const t = typeOf(i)
+  return t ? h('span', { class: 'chip chipType' }, t) : null
+}
+function prioMark(i) {
+  return h('span', { class: 'prio' + (i.priority <= 1 ? ' prioHot' : '') }, 'P' + i.priority)
+}
+
+function rowEl(i) {
+  return h('button', {
+    class: 'row' + (S.sel === i.id ? ' rowSel' : '') + (isClosed(i) ? ' rowClosed' : ''),
+    onClick: () => { S.sel = i.id; render() },
+  },
+    statusDot(i),
+    h('div', { class: 'rowMain' },
+      h('div', { class: 'rowTitle' }, i.title),
+      h('div', { class: 'rowMeta' },
+        h('span', { class: 'mono dim' }, i.id),
+        prioMark(i), typeChip(i), attnChip(i),
+        i.comment_count ? h('span', { class: 'countQuiet' }, '● ' + i.comment_count) : null)))
+}
+
+function depList(title, ids, icon) {
+  const items = ids.map(id => byId.get(id)).filter(Boolean)
+  if (!items.length) return null
+  return h('div', { class: 'dtSection' },
+    h('div', { class: 'dtSectionH' }, icon || '', title, h('span', { class: 'countQuiet' }, items.length)),
+    items.map(d => h('button', { class: 'depRow', onClick: () => gotoTicket(d.id) },
+      statusDot(d), h('span', { class: 'mono dim' }, d.id), h('span', { class: 't' }, d.title))))
+}
+function gotoTicket(id) {
+  S.sel = id
+  S.focus = id
+  S.drawer = id
+  const target = byId.get(id)
+  if (target.parent) S.mapFilter = target.parent
+  render()
+}
+
+function commentsBlock(i) {
+  const list = COMMENTS[i.id] || []
+  const wrap = h('div', { class: 'dtSection' },
+    h('div', { class: 'dtSectionH' }, '评论', list.length ? h('span', { class: 'countQuiet' }, list.length + ' 条') : null))
+  if (!S.loadedComments.has(i.id)) {
+    wrap.append(h('button', { class: 'btn btnGhost', onClick: ev => {
+      const btn = ev.currentTarget
+      btn.disabled = true; btn.textContent = '加载中…'
+      setTimeout(() => { S.loadedComments.add(i.id); render() }, 550)
+    } }, list.length ? '加载评论' : '检查评论'))
+    return wrap
+  }
+  if (!list.length) { wrap.append(h('div', { class: 'dim', style: 'font-size:12px' }, '暂无评论')); return wrap }
+  for (const c of list) {
+    wrap.append(h('div', { class: 'comment' },
+      h('div', { class: 'avatar' }, (c.author || '?').slice(0, 1).toUpperCase()),
+      h('div', { style: 'min-width:0' },
+        h('div', { class: 'cHead' }, h('span', { class: 'cAuthor' }, c.author), fmtDate(c.created_at)),
+        h('div', { class: 'cBody' }, c.text))))
+  }
+  return wrap
+}
+
+function detailEl(i, opts) {
+  return h('div', { style: 'position:relative' },
+    opts?.closable ? h('button', { class: 'iconBtn vbDetailClose', onClick: () => { S.focus = null; render() } }, '✕') : null,
+    h('div', { class: 'dtHead' },
+      h('h1', { class: 'dtTitle' }, i.title),
+      h('span', { class: 'mono dim' }, i.id)),
+    h('div', { class: 'dtMeta' },
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '状态'), h('span', { class: 'dtMetaV' }, statusDot(i), BUCKET_ZH[bucketOf(i)])),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '优先级'), h('span', { class: 'dtMetaV' }, 'P' + i.priority)),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '负责人'), h('span', { class: 'dtMetaV' }, i.assignee || '—')),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '类型'), h('span', { class: 'dtMetaV' }, i.issue_type)),
+      h('div', { class: 'dtMetaItem' }, h('span', { class: 'dtMetaK' }, '更新'), h('span', { class: 'dtMetaV' }, fmtDate(i.updated_at)))),
+    (i.labels || []).length ? h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:10px' },
+      i.labels.map(l => h('span', { class: 'chip' + (l.startsWith('wayfinder:') ? ' chipType' : '') }, l))) : null,
+    h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '描述'), h('div', { class: 'md' }, md(i.description))),
+    i.notes ? h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '备注 (bd note)'), h('div', { class: 'noteBlock', style: 'white-space:pre-wrap' }, i.notes)) : null,
+    depList('阻塞于 (blocks)', blockersOf(i.id), '⊢'),
+    depList('阻塞着 (blocks)', ISSUES.filter(x => blockersOf(x.id).includes(i.id)).map(x => x.id), '⊣'),
+    depList('子任务 (children)', childrenOf(i.id), '∟'),
+    i.parent && byId.get(i.parent) ? depList('所属地图 (parent)', [i.parent], '↑') : null,
+    commentsBlock(i))
+}
+
+/* ---------- layered DAG layout (prototype stand-in for dagre, dsh-01e.1) ---------- */
+function layout(nodes, edges, dir) {
+  const ids = new Set(nodes.map(n => n.id))
+  const next = new Map(nodes.map(n => [n.id, []]))
+  const indeg = new Map(nodes.map(n => [n.id, 0]))
+  for (const e of edges) {
+    if (!ids.has(e.from) || !ids.has(e.to)) continue
+    next.get(e.from).push(e.to)
+    indeg.set(e.to, indeg.get(e.to) + 1)
+  }
+  const layer = new Map(nodes.filter(n => indeg.get(n.id) === 0).map(n => [n.id, 0]))
+  const q = [...layer.keys()]
+  while (q.length) {
+    const id = q.shift()
+    for (const t of next.get(id)) {
+      const cand = layer.get(id) + 1
+      if (!layer.has(t) || layer.get(t) < cand) layer.set(t, cand)
+      indeg.set(t, indeg.get(t) - 1)
+      if (indeg.get(t) === 0) q.push(t)
+    }
+  }
+  const byLayer = new Map()
+  for (const n of nodes) {
+    const l = layer.get(n.id) || 0
+    if (!byLayer.has(l)) byLayer.set(l, [])
+    byLayer.get(l).push(n)
+  }
+  const pred = new Map(nodes.map(n => [n.id, []]))
+  for (const e of edges) if (ids.has(e.from) && ids.has(e.to)) pred.get(e.to).push(e.from)
+  const pos = new Map()
+  const GAP_N = 26, GAP_L = 78
+  if (dir === 'LR') {
+    let x = 20
+    for (const l of [...byLayer.keys()].sort((a, b) => a - b)) {
+      const arr = byLayer.get(l)
+      arr.sort((a, b) => String(pred.get(a.id)[0] || '').localeCompare(String(pred.get(b.id)[0] || '')))
+      let y = 20, maxW = 0
+      for (const n of arr) { pos.set(n.id, { x, y }); y += n.h + GAP_N; maxW = Math.max(maxW, n.w) }
+      x += maxW + GAP_L
+    }
+  } else {
+    let y = 20
+    for (const l of [...byLayer.keys()].sort((a, b) => a - b)) {
+      const arr = byLayer.get(l)
+      arr.sort((a, b) => String(pred.get(a.id)[0] || '').localeCompare(String(pred.get(b.id)[0] || '')))
+      let x = 20, maxH = 0
+      for (const n of arr) { pos.set(n.id, { x, y }); x += n.w + GAP_N; maxH = Math.max(maxH, n.h) }
+      y += maxH + GAP_L
+    }
+  }
+  const W = Math.max(...[...pos.values()].map(p => p.x), 0) + 260
+  const H = Math.max(...[...pos.values()].map(p => p.y), 0) + 120
+  return { pos, W, H }
+}
+
+function graphSvg(selIds, opts) {
+  const dir = opts.dir || 'TB'
+  const selSet = new Set(selIds)
+  const nodes = selIds.map(id => {
+    const isMap = MAPS.some(m => m.id === id)
+    return { id, w: isMap ? 252 : 216, h: isMap ? 50 : 60, map: isMap }
+  })
+  const edges = []
+  const seen = new Set()
+  for (const id of selIds) {
+    for (const b of blockersOf(id)) if (selSet.has(b) && !seen.has(b + '>' + id)) { seen.add(b + '>' + id); edges.push({ from: b, to: id }) }
+    for (const c of childrenOf(id)) if (selSet.has(c) && !seen.has(id + '>' + c)) { seen.add(id + '>' + c); edges.push({ from: id, to: c, pc: true }) }
+  }
+  const { pos, W, H } = layout(nodes, edges, dir)
+  const nById = new Map(nodes.map(n => [n.id, n]))
+  const inEgo = id => {
+    if (!opts.focus || opts.focus === id) return true
+    const f = opts.focus
+    return blockersOf(f).includes(id) || blockersOf(id).includes(f) || byId.get(f)?.parent === id || byId.get(id)?.parent === f
+  }
+  const svgNS = 'http://www.w3.org/2000/svg'
+  const mk = (t, at) => { const e = document.createElementNS(svgNS, t); for (const [k, v] of Object.entries(at)) e.setAttribute(k, v); return e }
+  const svg = mk('svg', { class: 'graphSvg', viewBox: `0 0 ${W} ${H}` })
+  const rootG = mk('g', {})
+  svg.append(rootG)
+  if (opts.pan) rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+  const defs = mk('defs', {})
+  for (const id of ['arr-blocks', 'arr-pc']) {
+    const m = mk('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' })
+    m.append(mk('path', { d: 'M 0 1 L 9 5 L 0 9 z', fill: 'var(--gedge)' }))
+    defs.append(m)
+  }
+  rootG.append(defs)
+  const anchor = (id, side) => {
+    const n = nById.get(id), p = pos.get(id)
+    return side === 'out'
+      ? (dir === 'LR' ? { x: p.x + n.w, y: p.y + n.h / 2 } : { x: p.x + n.w / 2, y: p.y + n.h })
+      : (dir === 'LR' ? { x: p.x, y: p.y + n.h / 2 } : { x: p.x + n.w / 2, y: p.y })
+  }
+  for (const e of edges) {
+    const a = anchor(e.from, 'out'), b = anchor(e.to, 'in')
+    const path = dir === 'LR'
+      ? `M${a.x},${a.y} C${a.x + 46},${a.y} ${b.x - 46},${b.y} ${b.x},${b.y}`
+      : `M${a.x},${a.y} C${a.x},${a.y + 42} ${b.x},${b.y - 42} ${b.x},${b.y}`
+    rootG.append(mk('path', { d: path, class: 'gEdge' + (e.pc ? ' pc' : '') + (opts.focus && inEgo(e.from) && inEgo(e.to) ? ' hi' : ''), markerEnd: `url(#${e.pc ? 'arr-pc' : 'arr-blocks'})` }))
+  }
+  for (const n of nodes) {
+    const i = byId.get(n.id)
+    const p = pos.get(n.id)
+    const g = mk('g', {
+      class: 'gNode' + (n.map ? ' mapNode' : '') + ((S.sel === n.id || S.focus === n.id) ? ' sel' : '') + (opts.focus && !inEgo(n.id) ? ' dimmed' : ''),
+      transform: `translate(${p.x},${p.y})`,
+    })
+    const b = bucketOf(i)
+    g.append(mk('rect', { class: 'box', width: n.w, height: n.h, rx: 9 }))
+    g.append(mk('rect', { x: 0, y: 0, width: 3.5, height: n.h, rx: 2, fill: `var(--gstat-${b})` }))
+    const tx = mk('text', { x: 14, y: n.map ? 21 : 19, class: 'title' })
+    tx.textContent = (n.map ? '▣ ' : '') + (i.title.length > 30 ? i.title.slice(0, 30) + '…' : i.title)
+    g.append(tx)
+    const t2 = mk('text', { x: 14, y: n.map ? 38 : 37, class: 'id' })
+    t2.textContent = i.id + ' · ' + BUCKET_ZH[b] + ' · P' + i.priority
+    g.append(t2)
+    g.addEventListener('click', () => (opts.onNode || (id => { S.sel = id; render() }))(n.id))
+    rootG.append(g)
+  }
+  if (opts.pan) attachPan(svg, rootG)
+  return { svg, W, H }
+}
+
+function attachPan(svg, rootG) {
+  let drag = null
+  svg.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY, px: S.panX, py: S.panY }; svg.classList.add('panning') })
+  svg.addEventListener('mousemove', e => {
+    if (!drag) return
+    S.panX = drag.px + (e.clientX - drag.x)
+    S.panY = drag.py + (e.clientY - drag.y)
+    rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+  })
+  window.addEventListener('mouseup', () => { drag = null; svg.classList.remove('panning') })
+  svg.addEventListener('wheel', e => {
+    e.preventDefault()
+    S.zoom = Math.min(3, Math.max(.3, S.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)))
+    rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+  }, { passive: false })
+}
+
+function legendEl() {
+  return h('div', { class: 'legend' },
+    h('div', {}, '━ 阻塞 blocks'), h('div', {}, '╌ 归属 parent-child'),
+    h('div', {}, h('span', { class: 'statDot st-frontier' }), '可认领'),
+    h('div', {}, h('span', { class: 'statDot st-progress' }), '进行中'),
+    h('div', {}, h('span', { class: 'statDot st-blocked' }), '已阻塞'),
+    h('div', {}, h('span', { class: 'statDot st-closed' }), '已完成'))
+}
+
+/* ================= variant A ================= */
+function renderA() {
+  const tickets = mapTickets(S.mapFilter)
+  if (!S.sel || !byId.has(S.sel) || (byId.get(S.sel).parent !== S.mapFilter && S.sel !== S.mapFilter)) {
+    S.sel = tickets[0] || S.mapFilter
+  }
+  const body = h('div', { class: 'vaBody' })
+  if (S.mode === 'list') {
+    vaListEl = h('div', { class: 'vaList' })
+    vaListEl.append(...renderAList())
+    body.append(vaListEl, h('div', { class: 'vaDetail' }, detailEl(byId.get(S.sel))))
+  } else {
+    const g = graphSvg([S.mapFilter, ...mapTickets(S.mapFilter)], { dir: 'TB' })
+    body.append(h('div', { class: 'vaGraphPane' },
+      h('div', { class: 'graphWrap' }, g.svg, legendEl(), h('div', { class: 'graphHint' }, '点击节点查看详情')),
+      h('div', { class: 'vaDetail' }, detailEl(byId.get(S.sel)))))
+  }
+  return h('div', { class: 'vaRoot' },
+    h('div', { class: 'toolbar' },
+      h('div', { class: 'segment' },
+        h('button', { class: S.mode === 'list' ? 'on' : '', onClick: () => { S.mode = 'list'; render() } }, '列表'),
+        h('button', { class: S.mode === 'graph' ? 'on' : '', onClick: () => { S.mode = 'graph'; render() } }, '图表')),
+      h('input', {
+        class: 'searchBox', placeholder: '搜索任务…', value: S.q,
+        onInput: ev => { S.q = ev.target.value; if (vaListEl) { vaListEl.innerHTML = ''; vaListEl.append(...renderAList()) } },
+      }),
+      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, '显示 ' + ISSUES.length + ' 个任务 · ' + MAPS.length + ' 个分组')),
+    body)
+}
+function renderAList() {
+  const q = S.q.toLowerCase()
+  const match = i => !q || i.title.toLowerCase().includes(q) || i.id.includes(q)
+  const out = []
+  const inProgAll = ISSUES.filter(i => inProg(i) && match(i))
+  if (inProgAll.length) {
+    out.push(h('div', { class: 'subHead', style: 'padding-top:14px' }, '进行中（全部分组）', h('span', { class: 'n' }, inProgAll.length)))
+    out.push(...inProgAll.map(i => rowEl(i)))
+  }
+  const renderMapGroup = m => {
+    const tickets = mapTickets(m.id).map(id => byId.get(id)).filter(match)
+    if (!tickets.length) return
+    const openG = S.openGroups.has(m.id)
+    const buckets = { frontier: [], progress: [], blocked: [], closed: [] }
+    for (const t of tickets) buckets[bucketOf(t)].push(t)
+    const done = buckets.closed.length, active = tickets.length - done
+    out.push(h('button', {
+      class: 'groupHead' + (openG ? '' : ' closed'),
+      onClick: () => { openG ? S.openGroups.delete(m.id) : S.openGroups.add(m.id); render() },
+    },
+      h('span', { class: 'caret' }, '▼'),
+      h('span', { class: 'gt' }, m.title),
+      h('span', { class: 'chip' }, active + ' 进行中'),
+      done ? h('span', { class: 'countQuiet' }, done + ' 已完成') : null))
+    if (openG) {
+      for (const b of ['frontier', 'progress', 'blocked']) {
+        if (!buckets[b].length) continue
+        out.push(h('div', { class: 'subHead' }, BUCKET_ZH[b], h('span', { class: 'n' }, buckets[b].length)))
+        out.push(...buckets[b].map(i => rowEl(i)))
+      }
+      if (buckets.closed.length) {
+        const key = m.id + ':c'
+        const openC = S.openGroups.has(key)
+        out.push(h('button', {
+          class: 'subHead asBtn',
+          onClick: () => { openC ? S.openGroups.delete(key) : S.openGroups.add(key); render() },
+        }, h('span', { style: 'font-size:9px' }, openC ? '▾' : '▸'), '已完成', h('span', { class: 'n' }, buckets.closed.length)))
+        if (openC) out.push(...buckets.closed.map(i => rowEl(i)))
+      }
+    }
+  }
+  const order = MAPS.some(m => m.id === S.mapFilter) ? [S.mapFilter, ...MAPS.filter(m => m.id !== S.mapFilter).map(m => m.id)] : MAPS.map(m => m.id)
+  for (const mid of order) renderMapGroup(byId.get(mid))
+  const loose = looseIssues.filter(match)
+  if (loose.length) {
+    out.push(h('button', {
+      class: 'groupHead' + (S.openGroups.has('__loose') ? '' : ' closed'),
+      onClick: () => { S.openGroups.has('__loose') ? S.openGroups.delete('__loose') : S.openGroups.add('__loose'); render() },
+    }, h('span', { class: 'caret' }, '▼'), h('span', { class: 'gt' }, '独立任务'), h('span', { class: 'chip' }, loose.length)))
+    if (S.openGroups.has('__loose')) out.push(...loose.map(i => rowEl(i)))
+  }
+  return out
+}
+
+/* ================= variant B ================= */
+function renderB() {
+  const ids = S.focus
+    ? [S.focus, ...blockersOf(S.focus), ...ISSUES.filter(x => blockersOf(x.id).includes(S.focus)).map(x => x.id), byId.get(S.focus).parent, ...childrenOf(S.focus)].filter(Boolean)
+    : [S.mapFilter, ...mapTickets(S.mapFilter)]
+  const g = graphSvg(ids, { dir: 'LR', pan: true, focus: S.focus, onNode: id => { S.focus = id; S.sel = id; S.zoom = 1; S.panX = S.panY = 0; render() } })
+  const canvas = h('div', { class: 'vbCanvas' }, g.svg, legendEl(),
+    h('div', { class: 'graphHint' }, S.focus ? '聚焦视图 · 1 跳自我图' : '滚轮缩放 · 拖拽平移 · 点击节点聚焦'))
+  if (S.focus) canvas.append(h('div', { class: 'vbDetailCard' }, detailEl(byId.get(S.focus), { closable: true })))
+  const frontierAll = ISSUES.filter(i => bucketOf(i) === 'frontier')
+  return h('div', { class: 'vbRoot' },
+    h('div', { class: 'toolbar', style: 'padding-bottom:6px' },
+      MAPS.map(m => h('button', {
+        class: 'mapChip' + (S.mapFilter === m.id ? ' on' : ''), title: m.title,
+        onClick: () => { S.mapFilter = m.id; S.focus = null; S.zoom = 1; S.panX = S.panY = 0; render() },
+      }, m.title)),
+      S.focus
+        ? h('button', { class: 'btn btnGhost', style: 'margin-left:auto;height:28px;padding:3px 12px', onClick: () => { S.focus = null; render() } }, '← 返回整图')
+        : h('span', { class: 'countQuiet', style: 'margin-left:auto' }, MAPS.length + ' 个分组')),
+    canvas,
+    h('div', { class: 'vbQueue' },
+      h('span', { class: 'vbQueueH' }, '前沿队列 · ' + frontierAll.length),
+      frontierAll.map(i => h('button', {
+        class: 'qChip' + (S.focus === i.id ? ' on' : ''),
+        onClick: () => { S.focus = i.id; S.sel = i.id; render() },
+      }, h('span', { class: 'statDot st-frontier' }), h('span', { class: 'mono dim' }, i.id), h('span', { class: 't' }, i.title)))))
+}
+
+/* ================= variant C ================= */
+function renderC() {
+  const cols = ['frontier', 'progress', 'blocked', 'closed']
+  const isMap = id => MAPS.some(m => m.id === id)
+  const board = h('div', { class: 'vcBoard' },
+    cols.map(b => {
+      const lanes = new Map([...MAPS.map(m => [m.id, []]), ['__loose', []]])
+      for (const i of ISSUES) {
+        if (isMap(i.id) || bucketOf(i) !== b) continue
+        const key = i.parent && lanes.has(i.parent) ? i.parent : '__loose'
+        lanes.get(key).push(i)
+      }
+      const total = [...lanes.values()].reduce((a, c) => a + c.length, 0)
+      const colEl = h('div', { class: 'vcCol' },
+        h('div', { class: 'vcColHead' }, h('span', { class: 'statDot st-' + b }), BUCKET_ZH[b], h('span', { class: 'countQuiet' }, total)))
+      const body = h('div', { class: 'vcColBody' })
+      for (const [mid, items] of lanes) {
+        if (!items.length) continue
+        body.append(h('div', { class: 'laneHead' }, mid === '__loose'
+          ? h('span', {}, '独立任务')
+          : h('span', { title: byId.get(mid).title }, '▣ ' + byId.get(mid).title)))
+        for (const i of items) {
+          body.append(h('button', { class: 'card', onClick: () => { S.drawer = i.id; S.sel = i.id; render() } },
+            h('div', { class: 'cardTitle' }, i.title),
+            h('div', { class: 'cardMeta' }, h('span', { class: 'mono dim' }, i.id), prioMark(i), typeChip(i), attnChip(i))))
+        }
+      }
+      colEl.append(body)
+      return colEl
+    }))
+  const root = h('div', { class: 'vcRoot' },
+    h('div', { class: 'toolbar' },
+      h('span', { class: 'countQuiet' }, '按状态分列 · 按地图分泳道 · 点击卡片查看详情与自我图'),
+      h('span', { class: 'countQuiet', style: 'margin-left:auto' }, '显示 ' + ISSUES.length + ' 个任务')),
+    board)
+  if (S.drawer && byId.get(S.drawer)) {
+    const i = byId.get(S.drawer)
+    const egoIds = [i.id, ...blockersOf(i.id), ...ISSUES.filter(x => blockersOf(x.id).includes(i.id)).map(x => x.id), i.parent, ...childrenOf(i.id)].filter(Boolean)
+    const g = graphSvg(egoIds, { dir: 'TB', focus: i.id })
+    const vw = Math.min(g.W, 470), vh = Math.min(g.H, 280)
+    g.svg.setAttribute('viewBox', `0 0 ${g.W} ${g.H}`)
+    g.svg.setAttribute('preserveAspectRatio', 'xMidYMin meet')
+    g.svg.style.width = '100%'
+    g.svg.style.height = vh + 'px'
+    root.append(
+      h('div', { class: 'drawerMask', onClick: () => { S.drawer = null; render() } }),
+      h('div', { class: 'drawer' },
+        h('button', { class: 'iconBtn', style: 'position:absolute;top:10px;right:10px', onClick: () => { S.drawer = null; render() } }, '✕'),
+        detailEl(i),
+        h('div', { class: 'dtSection' }, h('div', { class: 'dtSectionH' }, '自我图 · 1 跳'), h('div', { class: 'egoWrap' }, g.svg))))
+  }
+  return root
+}
+
+/* ================= switcher + demo panel ================= */
+function renderSwitcher() {
+  const keys = Object.keys(VARIANT_NAMES)
+  const cur = keys.indexOf(S.variant)
+  const go = d => { S.variant = keys[(cur + d + keys.length) % keys.length]; S.zoom = 1; S.panX = S.panY = 0; render() }
+  return h('div', { class: 'switcher' },
+    h('button', { onClick: () => go(-1), 'aria-label': '上一个变体' }, '←'),
+    h('span', { class: 'lbl' }, S.variant + ' — ' + VARIANT_NAMES[S.variant]),
+    h('button', { onClick: () => go(1), 'aria-label': '下一个变体' }, '→'))
+}
+function renderDemoPanel() {
+  return h('div', { class: 'demoPanel' },
+    h('label', {}, '深色主题', h('input', { type: 'checkbox', checked: S.dark, onChange: ev => { S.dark = ev.target.checked; render() } })),
+    h('label', {}, '数据状态', h('select', { onChange: ev => { S.dataState = ev.target.value; render() } },
+      h('option', { value: 'ok' }, '正常数据'),
+      h('option', { value: 'loading' }, '加载中'),
+      h('option', { value: 'empty' }, '空任务库'),
+      h('option', { value: 'nobd' }, 'bd 不可用'),
+      h('option', { value: 'nobeads' }, '无 .beads/'))))
+}
+
+/* keyboard variant cycling (not in inputs) */
+document.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '')) return
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+  const keys = Object.keys(VARIANT_NAMES)
+  S.variant = keys[(keys.indexOf(S.variant) + (e.key === 'ArrowRight' ? 1 : -1) + keys.length) % keys.length]
+  render()
+})
+
+render()
+</script>
+</body>
+</html>
