@@ -30,7 +30,6 @@ body {
   --gstat-progress: var(--dsw-alias-state-business-primary);
   --gstat-blocked: var(--dsw-static-amber-500);
   --gstat-closed: var(--dsw-alias-label-dimmed);
-  --gedge: var(--dsw-static-neutral-400);
 }
 
 /* header row + tab strip — mirrors ConversationRoot .tabs/.tab (13/16 wt500, gap 36, 2px bar) */
@@ -191,9 +190,10 @@ body {
 .gNode .id { font-family: var(--ds-font-family-code); font-size: 9.5px; fill: var(--dsw-alias-label-caption); }
 .gNode .title { fill: var(--dsw-alias-label-primary); font-weight: 500; }
 .gNode.dimmed { opacity: .3; }
-.gEdge { fill: none; stroke: var(--gedge); stroke-width: 1.4; }
-.gEdge.pc { stroke-dasharray: 3 4; stroke-width: 1.2; }
-.gEdge.hi { stroke: var(--dsw-alias-state-business-primary); stroke-width: 1.8; }
+.gEdge { fill: none; stroke: var(--dsw-alias-label-secondary); stroke-width: 1.8; }
+.gEdge.pc { stroke-dasharray: 4 4; stroke-width: 1.5; }
+.gEdge.hi { stroke: var(--dsw-alias-state-business-primary); stroke-width: 2.2; }
+.marker path { fill: var(--dsw-alias-label-secondary); }
 .legend {
   position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 5px;
   padding: 9px 12px; border-radius: 9px; background: var(--dsw-alias-bg-layer-1);
@@ -309,6 +309,7 @@ function h(tag, attrs, ...kids) {
   for (const [k, v] of Object.entries(attrs || {})) {
     if (k === 'class') el.className = v
     else if (k === 'html') el.innerHTML = v
+    else if (k === 'checked' || k === 'disabled' || k === 'selected') el[k] = !!v
     else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v)
     else if (k === 'style') el.style.cssText = v
     else el.setAttribute(k, v)
@@ -592,8 +593,8 @@ function graphSvg(selIds, opts) {
   if (opts.pan) rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
   const defs = mk('defs', {})
   for (const id of ['arr-blocks', 'arr-pc']) {
-    const m = mk('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' })
-    m.append(mk('path', { d: 'M 0 1 L 9 5 L 0 9 z', fill: 'var(--gedge)' }))
+    const m = mk('marker', { id, viewBox: '0 0 10 10', refX: 8.5, refY: 5, markerWidth: 8, markerHeight: 8, orient: 'auto-start-reverse' })
+    m.append(mk('path', { d: 'M 0 1 L 9 5 L 0 9 z' }))
     defs.append(m)
   }
   rootG.append(defs)
@@ -634,20 +635,46 @@ function graphSvg(selIds, opts) {
 }
 
 function attachPan(svg, rootG) {
-  let drag = null
+  let drag = null, raf = 0
+  const apply = () => rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+  const resetView = () => { S.zoom = S.tz = 1; S.panX = S.panY = S.tpx = S.tpy = 0; apply() }
+  S.tz ??= S.zoom; S.tpx ??= S.panX; S.tpy ??= S.panY
+  const step = () => {
+    raf = 0
+    if (!svg.isConnected) return // render() rebuilt the DOM; stop the stale loop
+    const k = 0.16 // per-frame easing toward the target view
+    S.zoom += (S.tz - S.zoom) * k
+    S.panX += (S.tpx - S.panX) * k
+    S.panY += (S.tpy - S.panY) * k
+    apply()
+    if (Math.abs(S.tz - S.zoom) > .001 || Math.abs(S.tpx - S.panX) > .5 || Math.abs(S.tpy - S.panY) > .5) raf = requestAnimationFrame(step)
+  }
+  const kick = () => { if (!raf) raf = requestAnimationFrame(step) }
   svg.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY, px: S.panX, py: S.panY }; svg.classList.add('panning') })
   svg.addEventListener('mousemove', e => {
     if (!drag) return
-    S.panX = drag.px + (e.clientX - drag.x)
-    S.panY = drag.py + (e.clientY - drag.y)
-    rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+    S.panX = S.tpx = drag.px + (e.clientX - drag.x)
+    S.panY = S.tpy = drag.py + (e.clientY - drag.y)
+    apply()
   })
   window.addEventListener('mouseup', () => { drag = null; svg.classList.remove('panning') })
   svg.addEventListener('wheel', e => {
     e.preventDefault()
-    S.zoom = Math.min(3, Math.max(.3, S.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)))
-    rootG.setAttribute('transform', `translate(${S.panX},${S.panY}) scale(${S.zoom})`)
+    // continuous factor: trackpads send small deltas, mouse wheels large notches
+    const nz = Math.min(3, Math.max(.25, S.tz * Math.exp(-e.deltaY * .0016)))
+    const ctm = typeof svg.getScreenCTM === 'function' ? svg.getScreenCTM() : null
+    const gctm = ctm && typeof rootG.getScreenCTM === 'function' ? rootG.getScreenCTM() : null
+    if (ctm && gctm && typeof DOMPoint === 'function') {
+      // anchor the graph point under the cursor: svgPt = pan + zoom * graphPt
+      const sp = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse())
+      const gp = new DOMPoint(e.clientX, e.clientY).matrixTransform(gctm.inverse())
+      S.tz = nz; S.tpx = sp.x - nz * gp.x; S.tpy = sp.y - nz * gp.y
+    } else {
+      S.tz = nz
+    }
+    kick()
   }, { passive: false })
+  svg.resetView = resetView
 }
 
 function legendEl() {
@@ -747,7 +774,7 @@ function renderB() {
   const ids = S.focus
     ? [S.focus, ...blockersOf(S.focus), ...ISSUES.filter(x => blockersOf(x.id).includes(S.focus)).map(x => x.id), byId.get(S.focus).parent, ...childrenOf(S.focus)].filter(Boolean)
     : [S.mapFilter, ...mapTickets(S.mapFilter)]
-  const g = graphSvg(ids, { dir: 'LR', pan: true, focus: S.focus, onNode: id => { S.focus = id; S.sel = id; S.zoom = 1; S.panX = S.panY = 0; render() } })
+  const g = graphSvg(ids, { dir: 'LR', pan: true, focus: S.focus, onNode: id => { S.focus = id; S.sel = id; S.zoom = S.tz = 1; S.panX = S.panY = S.tpx = S.tpy = 0; render() } })
   const canvas = h('div', { class: 'vbCanvas' }, g.svg, legendEl(),
     h('div', { class: 'graphHint' }, S.focus ? 'Focus view · 1-hop ego graph' : 'Scroll to zoom · drag to pan · click a node to focus'))
   if (S.focus) canvas.append(h('div', { class: 'vbDetailCard' }, detailEl(byId.get(S.focus), { closable: true })))
@@ -756,7 +783,7 @@ function renderB() {
     h('div', { class: 'toolbar', style: 'padding-bottom:6px' },
       MAPS.map(m => h('button', {
         class: 'mapChip' + (S.mapFilter === m.id ? ' on' : ''), title: m.title,
-        onClick: () => { S.mapFilter = m.id; S.focus = null; S.zoom = 1; S.panX = S.panY = 0; render() },
+        onClick: () => { S.mapFilter = m.id; S.focus = null; S.zoom = S.tz = 1; S.panX = S.panY = S.tpx = S.tpy = 0; render() },
       }, m.title)),
       S.focus
         ? h('button', { class: 'btn btnGhost', style: 'margin-left:auto;height:28px;padding:3px 12px', onClick: () => { S.focus = null; render() } }, '← Back to full graph')
@@ -828,7 +855,7 @@ function renderC() {
 function renderSwitcher() {
   const keys = Object.keys(VARIANT_NAMES)
   const cur = keys.indexOf(S.variant)
-  const go = d => { S.variant = keys[(cur + d + keys.length) % keys.length]; S.zoom = 1; S.panX = S.panY = 0; render() }
+  const go = d => { S.variant = keys[(cur + d + keys.length) % keys.length]; S.zoom = S.tz = 1; S.panX = S.panY = S.tpx = S.tpy = 0; render() }
   return h('div', { class: 'switcher' },
     h('button', { onClick: () => go(-1), 'aria-label': 'Previous variant' }, '←'),
     h('span', { class: 'lbl' }, S.variant + ' — ' + VARIANT_NAMES[S.variant]),
