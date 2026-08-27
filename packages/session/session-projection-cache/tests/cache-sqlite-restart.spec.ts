@@ -76,8 +76,7 @@ function fakePersistence(logs: Map<string, SessionEvent[]>, identityRef: { curre
 }
 
 /** Header shape for cachedSnapshot calls (the identity witness alone matters). */
-const headerOf = (id: SessionId, createdAt: number): Session['header'] =>
-  ({ version: 0, id, createdAt }) as Session['header']
+const headerOf = (id: SessionId, createdAt: number): Session['header'] => ({ version: 0, id, createdAt })
 
 const mark = (session: Session, marks: string[]): SessionEvent =>
   session.append('cache-test/mark', { marks })
@@ -123,6 +122,8 @@ async function era(options: EraOptions) {
   await ctx.plugin(SessionProjectionRegistry)
   ctx.sessionProjections.register(marksUnit())
   const persistence = fakePersistence(logs, identityRef)
+  // `as never` stands in for the rest of the SessionPersistence interface the
+  // injection declares: the fake serves only the cold ladder's readFrom face.
   ctx.provide('sessionPersistence', persistence as never)
   await ctx.plugin(SessionProjectionCache, { writeEveryEvents: 100, writeIntervalMs: 60_000 })
   // Process-exit simulation, in the same order the shipped composition tears

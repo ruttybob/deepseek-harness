@@ -3,9 +3,9 @@
  * {@link SessionId}, each record the full projection checkpoint for one
  * session (`key → {ver, seq, val}` rows). The spec object
  * is the single source of the domain's identity, version, and record schema;
- * the storage-domain routing decides the medium (the shipped composition's
- * json backend lands it at `<root>/session_projcache.json`, beside
- * `workspace.json`).
+ * the storage-domain routing decides the medium (the web profile routes it
+ * to the per-record sqlite medium `<storages>/projcache.db`; the json default
+ * lands it at `<root>/session_projcache.json`, beside `workspace.json`).
  * @module @deepseek-ai/dsh-session-projection-cache/src/spec
  */
 
