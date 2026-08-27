@@ -144,7 +144,10 @@ function emitPluginDisposed(context: Context, fiber: Fiber) {
  * config threw; `UNLOADING` — disposers are running; `DISPOSED` — the fiber
  * was removed and cannot restart.
  */
-export const enum FiberState {
+// A runtime enum, not a `const enum`: the vendored source boots through
+// per-file transpilers (tsx), which erase const enums, breaking every
+// cross-module value import such as apps/cli's profile-boot.
+export enum FiberState {
   PENDING,
   LOADING,
   ACTIVE,
