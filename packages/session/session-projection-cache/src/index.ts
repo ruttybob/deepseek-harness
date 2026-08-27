@@ -1,8 +1,10 @@
 /**
  * Persisted projection cache (`ctx.sessionProjectionCache`): durable
  * checkpoints of every client-visible or explicitly persisted projection unit's state, one record per
- * session on the domain data form (`session_projcache` domain — the shipped
- * json backend lands it beside `workspace.json`). The cache is a fold
+ * session on the domain data form (`session_projcache` domain — storage-domain
+ * routing decides the medium: the web profile routes it to the per-record
+ * sqlite medium `storages/projcache.db`, while the json default lands it
+ * beside `workspace.json`). The cache is a fold
  * shortcut, never an authority: a row is possibly stale (its `seq`
  * says how stale) but never wrong, so every write path is fail-soft (a lost
  * write costs a longer tail replay on the next cold read) and a
