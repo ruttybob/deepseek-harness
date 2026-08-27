@@ -56,10 +56,22 @@
       config:
         root: !!js dshHomePath('storages')
 
+    - id: storage-sqlite
+      name: '@deepseek-ai/dsh-storage-sqlite'
+      config:
+        path: !!js dshHomePath('storages', 'projcache.db')
+
+    # The Projection cache rides the per-record sqlite backend (dsh-yfd): each
+    # checkpoint lands as its own durable row instead of rewriting one
+    # whole-domain JSON file on every flush. ROLLBACK is pure configuration:
+    # delete the `storage-sqlite` row above and change this route to `routes: {}`
+    # (json keeps serving every other domain either way).
     - id: storage-domain
       name: '@deepseek-ai/dsh-storage-domain'
       config:
         backend: json
+        routes:
+          session_projcache: sqlite
 
     - id: message-feedback
       name: '@deepseek-ai/dsh-message-feedback'
