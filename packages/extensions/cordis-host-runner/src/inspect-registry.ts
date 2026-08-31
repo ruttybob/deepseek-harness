@@ -24,6 +24,8 @@ export interface HostCordisInspectQueryContext {
 export interface HostCordisInspectProviderRegistration {
   /** Provider and explicit method directory. */
   manifest: CordisInspectProviderManifest
+  /** Attach reference-counted instead of colliding on a duplicate id. */
+  shared?: boolean
   /** Execute one declared method. */
   query(method: string, input: JsonValue | undefined, context: HostCordisInspectQueryContext): Promise<JsonValue>
 }
@@ -44,6 +46,7 @@ declare module '@deepseek-ai/cordis' {
 /** Registry and cross-page router behind the two model-facing inspect tools. */
 export class CordisInspectRegistryService extends Service {
   private readonly providers = new Map<string, HostCordisInspectProviderRegistration>()
+  private readonly sharedCounts = new Map<string, number>()
   private readonly pending = new Map<CordisInspectRequestId, PendingClientQuery>()
   private clientManifest: readonly CordisInspectProviderManifest[] | undefined
   private nextRequest = 1
@@ -60,11 +63,48 @@ export class CordisInspectRegistryService extends Service {
    */
   register(registration: HostCordisInspectProviderRegistration): () => void {
     const manifest = validateManifest(registration.manifest)
+    if (registration.shared === true) return this.attachShared(registration, manifest)
     if (this.providers.has(manifest.id)) throw new Error(`Host Cordis inspect provider "${manifest.id}" is already registered`)
     const stored = { ...registration, manifest }
     this.providers.set(manifest.id, stored)
     return () => {
       if (this.providers.get(manifest.id) === stored) this.providers.delete(manifest.id)
+    }
+  }
+
+  /**
+   * Reference-count one `shared` registration. The first attach stores it;
+   * every further attach into the same process-global registry reuses the
+   * stored row, and the row leaves only when the last disposer fires.
+   * @param registration - the shared registration attaching again.
+   * @param manifest - its validated manifest.
+   * @returns single-shot disposer for this attach.
+   */
+  private attachShared(
+    registration: HostCordisInspectProviderRegistration,
+    manifest: CordisInspectProviderManifest,
+  ): () => void {
+    const stored = this.providers.get(manifest.id)
+    if (stored === undefined) {
+      this.providers.set(manifest.id, { ...registration, manifest })
+      this.sharedCounts.set(manifest.id, 1)
+    } else {
+      if (stored.shared !== true) {
+        throw new Error(`Host Cordis inspect provider "${manifest.id}" is already registered`)
+      }
+      this.sharedCounts.set(manifest.id, (this.sharedCounts.get(manifest.id) ?? 1) + 1)
+    }
+    let disposed = false
+    return () => {
+      if (disposed) return
+      disposed = true
+      const count = (this.sharedCounts.get(manifest.id) ?? 1) - 1
+      if (count > 0) {
+        this.sharedCounts.set(manifest.id, count)
+        return
+      }
+      this.sharedCounts.delete(manifest.id)
+      if (this.providers.get(manifest.id)?.shared === true) this.providers.delete(manifest.id)
     }
   }
 

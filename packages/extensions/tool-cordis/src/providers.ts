@@ -20,6 +20,8 @@ const HOST_EVENTS = EVENT_API.filter(event => !event.name.startsWith('cordis/'))
 
 /**
  * Construct Host providers over generated Catalogs, evaluator declarations, and live Tool scope.
+ * Every registration is `shared`: the toolset may be mounted both by a web overlay row and
+ * again per preset mount, all into the same process-global registry.
  * @param ctx - Host context used for Agent-scoped live Tool queries.
  * @returns registrations for static catalogs and live Host capabilities.
  */
@@ -46,6 +48,7 @@ export function hostInspectProviders(ctx: Context): HostCordisInspectProviderReg
       referencedTypes: [],
     } as unknown as JsonValue)),
     {
+      shared: true,
       manifest: {
         id: 'Tool',
         description: 'Tools visible to the requesting Agent, including scoped and dynamic registrations.',
@@ -73,6 +76,7 @@ function registration(
   outputSchema: JsonValue = ANY_OUTPUT,
 ): HostCordisInspectProviderRegistration {
   return {
+    shared: true,
     manifest: {
       id,
       description,
