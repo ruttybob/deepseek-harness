@@ -206,7 +206,8 @@ export class ClientModuleSystem implements ClientModuleLoader {
       if (record !== undefined) return record.exports
       if (this.factories.has(id)) return this.materialize(id).exports
       throw new Error(
-        `client-modules: require("${spec}") missed the module table — not a platform seed word, not a materialized module, `
+        `client-modules: require("${spec}") missed the module table — not a platform seed word`
+        + ' (PLATFORM_MODULES in @deepseek-ai/dsh-client-web/src/platform.ts), not a materialized module, '
         + 'and no registered package factory (a build-time externals drift, or a dynamic dependency that did not arrive)',
       )
     }

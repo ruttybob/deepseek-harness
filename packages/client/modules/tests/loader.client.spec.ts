@@ -263,9 +263,10 @@ describe('require resolution', () => {
     expect(built).toBe(1)
   })
 
-  it('a require that misses the module table is loud', async () => {
+  it('a require that misses the module table is loud and names the seed list', async () => {
     const b = bench([row('a')], { a: req => ({ dep: req('ghost') }) })
     await expect(b.loader.import('a', '', {})).rejects.toThrow('require("ghost") missed the module table')
+    await expect(b.loader.import('a', '', {})).rejects.toThrow('PLATFORM_MODULES in @deepseek-ai/dsh-client-web/src/platform.ts')
   })
 
   it('a require cycle is fatal', async () => {
