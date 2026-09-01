@@ -12,14 +12,16 @@
  */
 
 import { spawn, type ChildProcess } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
+import { dirname, join, sep } from 'node:path'
 import { networkInterfaces } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { addHarnessSourceSection } from '@deepseek-ai/dsh-app-boot'
 import type {} from '@deepseek-ai/dsh-client-connection'
+import { artifactPredates, newestSourceUnder } from '@deepseek-ai/dsh-client-modules'
 import * as FrontendStatic from '@deepseek-ai/dsh-host-frontend-static'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
@@ -225,6 +227,85 @@ export const internals: {
   openBrowser: (url: string) => Promise<void>
 } = { resolveDistIndex, openBrowser }
 
+/** Build instruction shared by the frontend-dist staleness report. */
+const FRONTEND_DIST_BUILD_INSTRUCTION = 'run `pnpm run build` before launch'
+
+/**
+ * Dependency names of a package manifest: dependencies and devDependencies
+ * share the build-input role, and the frontend declares its workspace links
+ * as devDependencies.
+ * @param frontendRoot - Absolute root of the frontend package.
+ * @returns Every dependency name the frontend manifest declares.
+ */
+function frontendDependencyNames(frontendRoot: string): string[] {
+  const manifest = JSON.parse(readFileSync(join(frontendRoot, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, unknown>
+    devDependencies?: Record<string, unknown>
+  }
+  return Object.keys({ ...manifest.dependencies, ...manifest.devDependencies })
+}
+
+/**
+ * Resolve the workspace packages a frontend links directly.
+ * Every workspace package exports `./package.json`, so resolution needs no
+ * manifest walk; the packages-tree membership test excludes registry
+ * dependencies and nested installs.
+ * @param names - Dependency names from the frontend manifest.
+ * @param requireFrom - Require anchored on the frontend package, resolving its own links.
+ * @param packagesRoot - Absolute root of the workspace packages tree.
+ * @returns Absolute `lib` roots, one per resolvable workspace dependency.
+ */
+function workspacePackageRoots(names: readonly string[], requireFrom: NodeJS.Require, packagesRoot: string): string[] {
+  const roots: string[] = []
+  for (const name of names) {
+    let manifest: string
+    try {
+      manifest = requireFrom.resolve(`${name}/package.json`)
+    } catch {
+      // An unresolvable dependency has no built products to compare; the
+      // static server reports the missing dist itself.
+      continue
+    }
+    const packageRoot = dirname(manifest)
+    if (!packageRoot.startsWith(`${packagesRoot}${sep}`)) continue
+    roots.push(join(packageRoot, 'lib'))
+  }
+  return roots
+}
+
+/**
+ * Fail activation when the served frontend dist predates its build inputs.
+ * Inputs are the frontend package's own sources and the built `lib` products
+ * of its direct workspace dependencies, which is what the Vite build links;
+ * transitive workspace inputs stay covered by the client bundle staleness
+ * check in `@deepseek-ai/dsh-client-modules`. A missing dist is request-time
+ * state that some compositions never produce, so it is not a staleness case.
+ * @param distIndex - Absolute path of the built frontend `dist/index.html`.
+ * @param workspaceRoot - This dsh installation's root, anchoring the workspace packages tree.
+ * @throws When the newest dist file predates the newest input file.
+ */
+export function assertFreshFrontendDist(distIndex: string, workspaceRoot: string = SOURCE_ROOT): void {
+  if (!existsSync(distIndex)) return
+  const frontendRoot = dirname(dirname(distIndex))
+  const newestDist = newestSourceUnder([dirname(distIndex)])
+  const newestInput = newestSourceUnder([
+    join(frontendRoot, 'src'),
+    ...workspacePackageRoots(
+      frontendDependencyNames(frontendRoot),
+      createRequire(join(frontendRoot, 'package.json')),
+      join(workspaceRoot, 'packages'),
+    ),
+  ])
+  if (newestDist === undefined || newestInput === undefined || !artifactPredates(newestDist.mtimeMs, newestInput)) return
+  throw new Error(
+    [
+      `web-app: frontend dist older than its inputs; ${FRONTEND_DIST_BUILD_INSTRUCTION}:`,
+      `  dist: ${newestDist.path} at ${new Date(newestDist.mtimeMs).toISOString()}`,
+      `  newest input: ${newestInput.path} at ${new Date(newestInput.mtimeMs).toISOString()}`,
+    ].join('\n'),
+  )
+}
+
 /**
  * Mount the Web runtime: dist serving, surface prompt, the bash runtime
  * variable, the URL line, and the default-browser handoff.
@@ -238,7 +319,9 @@ export function apply(ctx: Context, config: Config): void {
   const handoffBrowser = config.openBrowser && !launchedThroughSsh(ctx)
   // Release dependent rows only after bind-dependent trust has been sampled once.
   ctx.provide(WEB_RUNTIME_SERVICE, runtime)
-  ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex() })
+  const distIndex = internals.resolveDistIndex()
+  assertFreshFrontendDist(distIndex)
+  ctx.plugin(FrontendStatic, { distIndex })
   if (config.surfaceContext) {
     ctx.inject(['systemPrompt'], (promptCtx) => {
       addHarnessSourceSection(promptCtx, SOURCE_ROOT)

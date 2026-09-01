@@ -62,6 +62,7 @@ function launcher(): BrowserLauncher {
 function stageDist(): string {
   dist = mkdtempSync(join(tmpdir(), 'dsh-web-app-'))
   mkdirSync(join(dist, 'dist'))
+  writeFileSync(join(dist, 'package.json'), JSON.stringify({ name: '@fixture/frontend', private: true }))
   const index = join(dist, 'dist', 'index.html')
   writeFileSync(index, '<head></head><body>shell</body>')
   internals.resolveDistIndex = () => index

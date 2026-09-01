@@ -38,6 +38,7 @@ describe('web app browser startup', () => {
     tempRoots.push(root)
     const dist = join(root, 'dist')
     mkdirSync(dist)
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ name: '@fixture/frontend', private: true }))
     const index = join(dist, 'index.html')
     writeFileSync(index, '<!doctype html><title>ready</title>')
     internals.resolveDistIndex = () => index
