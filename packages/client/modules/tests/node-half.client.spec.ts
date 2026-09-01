@@ -1,6 +1,6 @@
 /** Node-half composition diagnostics for package metadata and built client bundles. */
 
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { SourceMap } from 'node:module'
 import { tmpdir } from 'node:os'
@@ -50,11 +50,23 @@ function writePackage(
   return clientPath
 }
 
-/** Create a built package with the supplied client declaration. */
-function writeBuiltPackage(packageName: string, client: Record<string, unknown>): void {
+/** Create a built package with the supplied client declaration. @returns the client bundle path. */
+function writeBuiltPackage(packageName: string, client: Record<string, unknown> = {}): string {
   const clientPath = writePackage(packageName, { dsh: { client: { platform: 'web', ...client } } })
   mkdirSync(dirname(clientPath), { recursive: true })
   writeFileSync(clientPath, 'module.exports = {}\n')
+  return clientPath
+}
+
+/** Write one nested package source file and return its path along with a supplied mtime offset in milliseconds. */
+function writeSourcePostdatingBundle(clientPath: string, offsetMs: number): { path: string; mtimeMs: number } {
+  const sourceRoot = join(dirname(dirname(clientPath)), 'src')
+  const sourcePath = join(sourceRoot, 'nested', 'late.ts')
+  mkdirSync(dirname(sourcePath), { recursive: true })
+  writeFileSync(sourcePath, 'export const late = true\n')
+  const shifted = new Date(Date.now() + offsetMs)
+  utimesSync(sourcePath, shifted, shifted)
+  return { path: sourcePath, mtimeMs: statSync(sourcePath).mtimeMs }
 }
 
 /** Construct the node-half service and capture its plugin-bundle route. */
@@ -432,6 +444,38 @@ describe('client bundle activation', () => {
       `    - package: ${secondName}`,
       `      path: ${secondPath}`,
     ].join('\n'))
+  })
+
+  it('groups bundles older than their package sources under one source-build instruction with a package/path list', () => {
+    const firstName = '@fixture/stale-first'
+    const secondName = '@fixture/stale-second'
+    const firstPath = writeBuiltPackage(firstName, {})
+    const secondPath = writeBuiltPackage(secondName, {})
+    const firstSource = writeSourcePostdatingBundle(firstPath, 60_000)
+    const secondSource = writeSourcePostdatingBundle(secondPath, 60_000)
+    expect(() => construct([firstName, secondName])).toThrow([
+      'client-modules: 2 client packages failed to compose:',
+      '  client bundles older than package sources; run `pnpm run build` before launch:',
+      `    - package: ${firstName}`,
+      `      path: ${firstPath}`,
+      `      newest source: ${firstSource.path} at ${new Date(firstSource.mtimeMs).toISOString()}`,
+      `    - package: ${secondName}`,
+      `      path: ${secondPath}`,
+      `      newest source: ${secondSource.path} at ${new Date(secondSource.mtimeMs).toISOString()}`,
+    ].join('\n'))
+  })
+
+  it('composes a bundle whose package sources are not newer', () => {
+    const packageName = '@fixture/fresh-bundle'
+    const clientPath = writeBuiltPackage(packageName, {})
+    writeSourcePostdatingBundle(clientPath, -60_000)
+    expect(construct([packageName]).graph().entries.map(entry => entry.id)).toEqual([packageName])
+  })
+
+  it('composes a package that ships no source tree beside the bundle', () => {
+    const packageName = '@fixture/published-bundle'
+    writeBuiltPackage(packageName, {})
+    expect(construct([packageName]).graph().entries.map(entry => entry.id)).toEqual([packageName])
   })
 
   it('does not report other bundle read failures as missing builds', () => {

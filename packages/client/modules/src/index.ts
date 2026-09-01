@@ -34,6 +34,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Entry } from '@deepseek-ai/cordis-plugin-loader'
 import type { IndexInjection } from '@deepseek-ai/dsh-host-webserver'
 import { optionalStringArray, stripClientSuffix } from './client/manifest.ts'
+import { artifactPredates, newestSourceUnder, type NewestSource } from './artifact-freshness.ts'
 import type { WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph } from './client/manifest.ts'
 
 export { stripClientSuffix } from './client/manifest.ts'
@@ -85,6 +86,8 @@ export interface ClientArtifactBaseline {
 /** Resolved metadata cached for one Loader specifier and owning-tree base URL until restart. */
 interface PkgMeta extends WebBootRowFields {
   clientPath: string
+  /** Absolute package source root the client bundle is built from. */
+  sourceRoot: string
 }
 
 interface ResolvedPkgMeta {
@@ -123,11 +126,29 @@ class MissingClientBundleError extends Error {
   }
 }
 
+/** Client bundle predating its package sources, retained as structured data for activation-error grouping. */
+class StaleClientBundleError extends Error {
+  constructor(
+    readonly packageName: string,
+    readonly clientPath: string,
+    readonly newestSource: NewestSource,
+  ) {
+    super(
+      [
+        `client-modules: client bundle older than package sources; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`,
+        `  package: ${packageName}`,
+        `  path: ${clientPath}`,
+        `  newest source: ${newestSource.path} at ${new Date(newestSource.mtimeMs).toISOString()}`,
+      ].join('\n'),
+    )
+  }
+}
+
 /** Activation failures grouped by actionable package-build errors and unrelated failures. */
 class ClientPackageCompositionError extends AggregateError {
   constructor(failures: Error[]) {
     const missingBundles = failures.filter((error): error is MissingClientBundleError => error instanceof MissingClientBundleError)
-    const otherFailures = failures.filter(error => !(error instanceof MissingClientBundleError))
+    const staleBundles = failures.filter((error): error is StaleClientBundleError => error instanceof StaleClientBundleError)
     const packageNoun = failures.length === 1 ? 'package' : 'packages'
     const lines = [`client-modules: ${String(failures.length)} client ${packageNoun} failed to compose:`]
     if (missingBundles.length > 0) {
@@ -136,6 +157,19 @@ class ClientPackageCompositionError extends AggregateError {
         lines.push(`    - package: ${error.packageName}`, `      path: ${error.clientPath}`)
       }
     }
+    if (staleBundles.length > 0) {
+      lines.push(`  client bundles older than package sources; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`)
+      for (const error of staleBundles) {
+        lines.push(
+          `    - package: ${error.packageName}`,
+          `      path: ${error.clientPath}`,
+          `      newest source: ${error.newestSource.path} at ${new Date(error.newestSource.mtimeMs).toISOString()}`,
+        )
+      }
+    }
+    const isActionableBuildError = (error: Error): boolean =>
+      error instanceof MissingClientBundleError || error instanceof StaleClientBundleError
+    const otherFailures = failures.filter(error => !isActionableBuildError(error))
     if (otherFailures.length > 0) {
       lines.push('  other failures:', ...otherFailures.map(error => `    - ${error.message}`))
     }
@@ -578,6 +612,7 @@ export class ClientModuleRegistry extends Service {
     this.composed = this.compose()
     const failures: Error[] = []
     this.flush(err => failures.push(err))
+    failures.push(...this.staleBundleFailures())
     if (failures.length > 0) {
       throw new ClientPackageCompositionError(failures)
     }
@@ -763,6 +798,7 @@ export class ClientModuleRegistry extends Service {
     }
     const meta: PkgMeta = {
       clientPath: join(dirname(pkgPath), clientRel),
+      sourceRoot: join(dirname(pkgPath), 'src'),
       ...(decl.inject !== undefined ? { inject: decl.inject } : {}),
       external: decl.external ?? [],
       immediately: decl.immediately === true,
@@ -848,6 +884,23 @@ export class ClientModuleRegistry extends Service {
 
   private sourceKey(loaderName: string, baseUrl: string): string {
     return `${baseUrl}\0${loaderName}`
+  }
+
+  /**
+   * Staleness failures for the packages the activation pass composed.
+   * The check runs only here, never in the steady-state reconcile: a dev
+   * watcher sits between a source write and the rebuilt bundle, and a live
+   * session must keep the last good graph while that window is open.
+   * @returns One error per composed client bundle older than its package sources.
+   */
+  private staleBundleFailures(): Error[] {
+    const failures: Error[] = []
+    for (const [packageName, record] of this.table) {
+      const newest = newestSourceUnder([record.meta.sourceRoot])
+      if (newest === undefined || !artifactPredates(record.baseline.mtimeMs, newest)) continue
+      failures.push(new StaleClientBundleError(packageName, record.baseline.path, newest))
+    }
+    return failures
   }
 
   /** Capture the bundle stats before reading its bytes. */
