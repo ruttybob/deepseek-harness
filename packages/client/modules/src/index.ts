@@ -38,6 +38,7 @@ import { artifactPredates, newestSourceUnder, type NewestSource } from './artifa
 import type { WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph } from './client/manifest.ts'
 
 export { stripClientSuffix } from './client/manifest.ts'
+export { artifactPredates, newestSourceUnder, type NewestSource } from './artifact-freshness.ts'
 export type {
   BootManifest, BootModuleRow, BootPluginRow, WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph,
 } from './client/manifest.ts'
