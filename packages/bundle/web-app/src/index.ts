@@ -246,16 +246,17 @@ function frontendDependencyNames(frontendRoot: string): string[] {
 }
 
 /**
- * Resolve the workspace packages a frontend links directly.
- * Every workspace package exports `./package.json`, so resolution needs no
- * manifest walk; the packages-tree membership test excludes registry
- * dependencies and nested installs.
+ * Resolve the in-tree packages a frontend links directly: workspace packages
+ * and vendored packages both ship built `lib` products the Vite build links.
+ * Every such package exports `./package.json`, so resolution needs no manifest
+ * walk; the trees membership test excludes registry dependencies.
  * @param names - Dependency names from the frontend manifest.
  * @param requireFrom - Require anchored on the frontend package, resolving its own links.
- * @param packagesRoot - Absolute root of the workspace packages tree.
- * @returns Absolute `lib` roots, one per resolvable workspace dependency.
+ * @param workspaceRoot - This dsh installation's root.
+ * @returns Absolute `lib` roots, one per resolvable in-tree dependency.
  */
-function workspacePackageRoots(names: readonly string[], requireFrom: NodeJS.Require, packagesRoot: string): string[] {
+function workspacePackageRoots(names: readonly string[], requireFrom: NodeJS.Require, workspaceRoot: string): string[] {
+  const trees = [join(workspaceRoot, 'packages'), join(workspaceRoot, 'vendor')]
   const roots: string[] = []
   for (const name of names) {
     let manifest: string
@@ -267,7 +268,7 @@ function workspacePackageRoots(names: readonly string[], requireFrom: NodeJS.Req
       continue
     }
     const packageRoot = dirname(manifest)
-    if (!packageRoot.startsWith(`${packagesRoot}${sep}`)) continue
+    if (!trees.some(tree => packageRoot.startsWith(`${tree}${sep}`))) continue
     roots.push(join(packageRoot, 'lib'))
   }
   return roots
@@ -276,12 +277,12 @@ function workspacePackageRoots(names: readonly string[], requireFrom: NodeJS.Req
 /**
  * Fail activation when the served frontend dist predates its build inputs.
  * Inputs are the frontend package's own sources and the built `lib` products
- * of its direct workspace dependencies, which is what the Vite build links;
- * transitive workspace inputs stay covered by the client bundle staleness
- * check in `@deepseek-ai/dsh-client-modules`. A missing dist is request-time
- * state that some compositions never produce, so it is not a staleness case.
+ * of its direct in-tree dependencies, which is what the Vite build links;
+ * transitive in-tree inputs stay covered by the client bundle staleness check
+ * in `@deepseek-ai/dsh-client-modules`. A missing dist is request-time state
+ * that some compositions never produce, so it is not a staleness case.
  * @param distIndex - Absolute path of the built frontend `dist/index.html`.
- * @param workspaceRoot - This dsh installation's root, anchoring the workspace packages tree.
+ * @param workspaceRoot - This dsh installation's root, anchoring the in-tree package trees.
  * @throws When the newest dist file predates the newest input file.
  */
 export function assertFreshFrontendDist(distIndex: string, workspaceRoot: string = SOURCE_ROOT): void {
@@ -293,7 +294,7 @@ export function assertFreshFrontendDist(distIndex: string, workspaceRoot: string
     ...workspacePackageRoots(
       frontendDependencyNames(frontendRoot),
       createRequire(join(frontendRoot, 'package.json')),
-      join(workspaceRoot, 'packages'),
+      workspaceRoot,
     ),
   ])
   if (newestDist === undefined || newestInput === undefined || !artifactPredates(newestDist.mtimeMs, newestInput)) return

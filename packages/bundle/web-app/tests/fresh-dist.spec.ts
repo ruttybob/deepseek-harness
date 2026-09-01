@@ -85,6 +85,26 @@ describe('assertFreshFrontendDist', () => {
     expect(() => { assertFreshFrontendDist(distIndex, root) }).not.toThrow()
   })
 
+  it('counts a vendored dependency lib as an input', () => {
+    const { distIndex } = buildWorkspace()
+    writeDatedFile('packages/frontend/package.json', 0, JSON.stringify({
+      name: '@fixture/frontend',
+      dependencies: {
+        '@fixture/dep': 'workspace:^',
+        '@fixture/vendored': 'workspace:^',
+      },
+    }))
+    writeDatedFile('vendor/vendored/package.json', 0, JSON.stringify({
+      name: '@fixture/vendored',
+      main: 'lib/index.js',
+    }))
+    writeDatedFile('vendor/vendored/lib/index.js', 0)
+    const link = join(root!, 'packages/frontend/node_modules/@fixture/vendored')
+    mkdirSync(dirname(link), { recursive: true })
+    symlinkSync(relative(dirname(link), join(root!, 'vendor/vendored')), link, 'dir')
+    expect(() => { assertFreshFrontendDist(distIndex, root) }).toThrow('vendor/vendored/lib/index.js')
+  })
+
   it('skips a dependency that does not resolve', () => {
     const { distIndex } = buildWorkspace()
     writeDatedFile('packages/frontend/package.json', 0, JSON.stringify({
