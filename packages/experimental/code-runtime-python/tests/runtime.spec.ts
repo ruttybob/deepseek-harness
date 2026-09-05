@@ -28,8 +28,12 @@ import type { CodeBindingFunction, CodeJsonValue, CodeRunResult } from '@deepsee
  * records the same race and solves it with argv-based identity; recording the
  * mkdtempSync results is the fs-mock equivalent.
  */
-const { failNextCopyOf, stagedDirs, tempDirs, tempFiles } = vi.hoisted(() => ({
+const { failNextCopyOf, fakeProcStat, failProcRead, stagedDirs, tempDirs, tempFiles } = vi.hoisted(() => ({
   failNextCopyOf: { value: undefined as string | undefined },
+  // Synthetic `/proc/<pid>/stat` content and a one-shot read failure for the
+  // Linux-only `readProcessStart` read path (see the process-identity suite).
+  fakeProcStat: { value: undefined as string | undefined },
+  failProcRead: { value: false },
   stagedDirs: [] as string[],
   // Test-created temp dirs/files, registered by the helpers below and removed
   // after each test: a suite run over real python3 subprocesses must not
@@ -54,6 +58,20 @@ vi.mock('node:fs', async (importOriginal) => {
       const dir = actual.mkdtempSync(prefix)
       if (basename(prefix).startsWith('dsh-code-runtime-python-')) stagedDirs.push(dir)
       return dir
+    },
+    readFileSync(path: unknown, options: unknown): string {
+      const entry = typeof path === 'string' ? path : ''
+      if (fakeProcStat.value !== undefined && entry.startsWith('/proc/') && entry.endsWith('/stat')) {
+        return fakeProcStat.value
+      }
+      if (failProcRead.value && entry.startsWith('/proc/')) {
+        failProcRead.value = false
+        throw new Error('simulated unreadable /proc entry')
+      }
+      return actual.readFileSync(
+        path as Parameters<typeof actual.readFileSync>[0],
+        options as Parameters<typeof actual.readFileSync>[1],
+      ) as string
     },
   }
 })
@@ -766,6 +784,29 @@ describe('PythonCodeRuntime — process identity', () => {
       // signals the pgid without the identity re-check instead of paying a `ps`
       // fork per signal.
       expect(own).toBeUndefined()
+    }
+  })
+
+  it('reads the Linux stat path and degrades on an unreadable entry on every platform', () => {
+    // The `/proc` read path exists only under a Linux platform, so without this
+    // stub the coverage gate depends on which OS runs it: Darwin stops at the
+    // platform arm and leaves the parser uncovered. The stub pins the parser
+    // (field 22 after the comm parenthesis, where comm itself may contain
+    // parentheses) and the catch degrade everywhere the gates run.
+    const platform = Object.getOwnPropertyDescriptor(process, 'platform')!
+    Object.defineProperty(process, 'platform', { value: 'linux' })
+    try {
+      // Slicing from after the LAST `)` drops fields 1-2, so starttime (field
+      // 22) sits at index 19; the eighteen zeros are fields 4-21.
+      fakeProcStat.value = `4242 (py (th) on) R ${'0 '.repeat(18).trim()} 987654 0 0`
+      expect(readProcessStart(4242)).toBe('987654')
+      fakeProcStat.value = undefined
+      failProcRead.value = true
+      expect(readProcessStart(4242)).toBeUndefined()
+    } finally {
+      fakeProcStat.value = undefined
+      failProcRead.value = false
+      Object.defineProperty(process, 'platform', platform)
     }
   })
 })
@@ -5186,18 +5227,18 @@ describe('PythonCodeRuntime — hostile peer', () => {
     // exception. Linux-only RLIMIT_AS repro; on macOS the value round-trips
     // either way, but the fixture stays within the address space so it is honest.
     //
-    // `maxWallMs` is 60s, not the 20s the memory assertion alone needs: the O(depth)
+    // `maxWallMs` is 180s, not the 20s the memory assertion alone needs: the O(depth)
     // cursor pulls 6M elements one at a time through Python-level frames, which costs
-    // ~11s on an idle machine and more under the coverage lane's V8 instrumentation
+    // ~11s on an idle machine and minutes under the coverage lane's V8 instrumentation
     // with several workers sharing a box. This budget bounds the run without letting a
     // loaded runner's scheduling latency read as a `timeout` — what this test asserts
     // is the O(depth) memory shape, not a speed claim.
-    const { runtime } = await setup({ maxValueBytes: 20 * 1024 * 1024, addressSpaceMb: 384, maxWallMs: 60_000 })
+    const { runtime } = await setup({ maxValueBytes: 20 * 1024 * 1024, addressSpaceMb: 384, maxWallMs: 180_000 })
     const result = await runtime.run({ program: 'return [0] * 6_000_000', bindings: [] })
     expect(result.error).toBeUndefined()
     expect(Array.isArray(result.value)).toBe(true)
     expect((result.value as number[]).length).toBe(6_000_000)
-  }, 90_000)
+  }, 200_000)
 
   it('validates wide binding arguments in O(depth), not O(width)', async () => {
     // The completion-value walks are budgeted; this one is not. `dispatch` runs
