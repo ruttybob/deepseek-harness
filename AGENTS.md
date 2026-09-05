@@ -152,3 +152,17 @@ Docs accompany every code change: update affected README and JSDoc contracts tog
 ## Vendoring policy
 
 `vendor/` packages are pinned source copies (manifest with upstream SHAs in [vendor/README.md](vendor/README.md)). Update via the sync procedure there; re-apply or retire the logged local modifications; rerun `pnpm run test && pnpm run build`.
+
+## Agent skills
+
+### Issue tracker
+
+bd (beads): prefix `dsh`, visibility `stealth` — the store is this repo's `.beads/`, kept local via `.git/info/exclude` (not committed, no sync). Specs, tickets, and chores all live there — readiness is `bd ready`; the only workflow labels are `needs-info` and `human`. See `docs/agents/issue-tracker.md`.
+
+### Persistent memory
+
+In bd, via `bd remember` / `bd recall`. Reach for `bd remember "<insight>"` for anything worth keeping across sessions; load the store with `bd recall` when a task needs it. See *Memory* in `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
