@@ -124,7 +124,18 @@ export function indexExportedTypes(scanRoot: string, patterns: readonly string[]
     .map(path => path.split(sep).join('/')))].sort()
   for (const rel of rels) {
     const abs = resolve(scanRoot, rel)
-    const sf = ts.createSourceFile(abs, readFileSync(abs, 'utf8'), ts.ScriptTarget.Latest, true, scriptKindOf(rel))
+    let source: string
+    try {
+      source = readFileSync(abs, 'utf8')
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+      // A concurrently running oxlint-contract probe writes and removes
+      // `oxlint-contract-<uuid>.ts` inside real package directories, so the
+      // glob can list one between its create and remove. A vanished entry is
+      // the only reachable read failure here; any other read error propagates.
+      continue
+    }
+    const sf = ts.createSourceFile(abs, source, ts.ScriptTarget.Latest, true, scriptKindOf(rel))
     for (const statement of sf.statements) {
       if (!ts.isInterfaceDeclaration(statement) && !ts.isTypeAliasDeclaration(statement)) continue
       if (!statement.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)) continue
