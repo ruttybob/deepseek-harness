@@ -270,7 +270,11 @@ describe('startup cleanup sweep', () => {
     const cutoffMs = Date.now() - 30 * DAY_MS
     const boundary = join(dir, 'boundary.txt')
     writeFileSync(boundary, 'x')
-    utimesSync(boundary, cutoffMs / 1000, cutoffMs / 1000)
+    // `cutoffMs / 1000` rounds to a double that can sit below the true cutoff
+    // instant, storing an mtime strictly older than it and flaking this keep
+    // assertion. `Date` converts to exact (seconds, nanoseconds), so the file
+    // lands precisely on the boundary the sweep must keep.
+    utimesSync(boundary, new Date(cutoffMs), new Date(cutoffMs))
     await sweepSpillRoots({ roots: [active(root)], cutoffMs, warn: () => {} })
     expect(existsSync(boundary)).toBe(true)
   })
