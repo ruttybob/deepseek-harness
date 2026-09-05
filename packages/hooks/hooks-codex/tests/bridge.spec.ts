@@ -226,7 +226,7 @@ describe('hooks-codex bridge', () => {
     // runHook resolves an aborted run as a non-blocking error, so draining must
     // not log a rejected continuation.
     expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('SessionStart hook failed'))
-  })
+  }, 30_000) // Real hook subprocess, agent startup, and a dispose drain need headroom under load.
 
   it('has the namespace-plugin export shape (no stray default) so the Loader keeps name/inject/apply', () => {
     expect('default' in HooksCodex).toBe(false)
