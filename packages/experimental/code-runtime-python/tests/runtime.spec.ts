@@ -28,8 +28,12 @@ import type { CodeBindingFunction, CodeJsonValue, CodeRunResult } from '@deepsee
  * records the same race and solves it with argv-based identity; recording the
  * mkdtempSync results is the fs-mock equivalent.
  */
-const { failNextCopyOf, stagedDirs, tempDirs, tempFiles } = vi.hoisted(() => ({
+const { failNextCopyOf, fakeProcStat, failProcRead, stagedDirs, tempDirs, tempFiles } = vi.hoisted(() => ({
   failNextCopyOf: { value: undefined as string | undefined },
+  // Synthetic `/proc/<pid>/stat` content and a one-shot read failure for the
+  // Linux-only `readProcessStart` read path (see the process-identity suite).
+  fakeProcStat: { value: undefined as string | undefined },
+  failProcRead: { value: false },
   stagedDirs: [] as string[],
   // Test-created temp dirs/files, registered by the helpers below and removed
   // after each test: a suite run over real python3 subprocesses must not
@@ -54,6 +58,20 @@ vi.mock('node:fs', async (importOriginal) => {
       const dir = actual.mkdtempSync(prefix)
       if (basename(prefix).startsWith('dsh-code-runtime-python-')) stagedDirs.push(dir)
       return dir
+    },
+    readFileSync(path: unknown, options: unknown): string {
+      const entry = typeof path === 'string' ? path : ''
+      if (fakeProcStat.value !== undefined && entry.startsWith('/proc/') && entry.endsWith('/stat')) {
+        return fakeProcStat.value
+      }
+      if (failProcRead.value && entry.startsWith('/proc/')) {
+        failProcRead.value = false
+        throw new Error('simulated unreadable /proc entry')
+      }
+      return actual.readFileSync(
+        path as Parameters<typeof actual.readFileSync>[0],
+        options as Parameters<typeof actual.readFileSync>[1],
+      ) as string
     },
   }
 })
@@ -766,6 +784,29 @@ describe('PythonCodeRuntime — process identity', () => {
       // signals the pgid without the identity re-check instead of paying a `ps`
       // fork per signal.
       expect(own).toBeUndefined()
+    }
+  })
+
+  it('reads the Linux stat path and degrades on an unreadable entry on every platform', () => {
+    // The `/proc` read path exists only under a Linux platform, so without this
+    // stub the coverage gate depends on which OS runs it: Darwin stops at the
+    // platform arm and leaves the parser uncovered. The stub pins the parser
+    // (field 22 after the comm parenthesis, where comm itself may contain
+    // parentheses) and the catch degrade everywhere the gates run.
+    const platform = Object.getOwnPropertyDescriptor(process, 'platform')!
+    Object.defineProperty(process, 'platform', { value: 'linux' })
+    try {
+      // Slicing from after the LAST `)` drops fields 1-2, so starttime (field
+      // 22) sits at index 19; the eighteen zeros are fields 4-21.
+      fakeProcStat.value = `4242 (py (th) on) R ${'0 '.repeat(18).trim()} 987654 0 0`
+      expect(readProcessStart(4242)).toBe('987654')
+      fakeProcStat.value = undefined
+      failProcRead.value = true
+      expect(readProcessStart(4242)).toBeUndefined()
+    } finally {
+      fakeProcStat.value = undefined
+      failProcRead.value = false
+      Object.defineProperty(process, 'platform', platform)
     }
   })
 })
