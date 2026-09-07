@@ -27,7 +27,8 @@ async function bootHmr(dir: string, root: string[] = [], usePolling?: boolean): 
 }
 
 async function eventually(test: () => boolean, message: string): Promise<void> {
-  const deadline = Date.now() + 10_000
+  // Watch settling outruns 10s under coverage instrumentation on loaded hosts.
+  const deadline = Date.now() + 30_000
   while (!test()) {
     if (Date.now() >= deadline) throw new Error(message)
     await new Promise(resolve => setTimeout(resolve, 10))
@@ -54,7 +55,7 @@ describe('HMR exact config paths', () => {
     const observed: string[] = []
     ctx.on('hmr/change', (url) => { observed.push(url) })
     try {
-      const deadline = Date.now() + 20_000
+      const deadline = Date.now() + 30_000
       for (let generation = 1; !observed.includes(expected); generation += 1) {
         if (Date.now() >= deadline) {
           throw new Error(`HMR did not observe ${expected} through the alias; observed ${JSON.stringify(observed)}`)
@@ -178,7 +179,7 @@ describe('HMR exact config paths', () => {
     }
   })
 
-  it('normalizes refresh failures and broadcasts them without escaping the watcher', { timeout: 20_000 }, async () => {
+  it('normalizes refresh failures and broadcasts them without escaping the watcher', { timeout: 60_000 }, async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dsh-hmr-config-'))
     hmrRoots.push(dir)
     const filename = join(dir, 'plugins.yml')

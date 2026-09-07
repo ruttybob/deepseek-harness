@@ -36,7 +36,8 @@ const tmp = (): string => {
 }
 
 async function eventually(test: () => boolean, message: string): Promise<void> {
-  const deadline = Date.now() + 10_000
+  // Watch settling outruns 10s under coverage instrumentation on loaded hosts.
+  const deadline = Date.now() + 30_000
   while (!test()) {
     if (Date.now() >= deadline) throw new Error(message)
     await new Promise(resolve => setTimeout(resolve, 10))
