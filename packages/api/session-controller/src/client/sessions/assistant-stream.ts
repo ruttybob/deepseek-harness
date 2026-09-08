@@ -5,7 +5,7 @@ import type {
   SessionAssistantStreamFrame,
 } from '../../types.ts'
 import { expandAssistantStream } from '@deepseek-ai/dsh-llm/assistant-stream'
-import type { AssistantStreamRecord } from '@deepseek-ai/dsh-llm/assistant-stream'
+import type { AssistantStreamRecord, TimedStreamChunk } from '@deepseek-ai/dsh-llm/assistant-stream'
 import type { LlmAttemptId } from '@deepseek-ai/dsh-llm/brand'
 import type {
   SessionAssistantSettlementEntry,
@@ -47,7 +47,9 @@ export class ClientAssistantStream {
    * Replace the durable Web window and adopt an optional reconnect baseline.
    * @param entries - durable entries in the replacement window.
    * @param baseline - compact prefix for an Assistant attempt that is still live.
-   * @returns immediately visible durable entries plus reconstructed transient chunks.
+   * @returns immediately visible durable entries plus reconstructed transient chunks;
+   *   a baseline that fails expansion degrades to the durable entries alone (the
+   *   live attempt stays adopted) rather than failing the replacement.
    */
   replace(
     entries: readonly SessionEventLikeEntry[],
@@ -70,9 +72,19 @@ export class ClientAssistantStream {
     this.publishedSeqs = new Set(visible.map(entry => entry.event.seq))
     this.durableCursor = visible.reduce((cursor, entry) => Math.max(cursor, entry.event.seq), -1)
     if (opening !== undefined) {
-      for (const [index, member] of expandAssistantStream(
-        opening.stream as unknown as readonly AssistantStreamRecord[],
-      ).entries()) {
+      let reconstructed: readonly TimedStreamChunk[] = []
+      try {
+        reconstructed = expandAssistantStream(
+          opening.stream as unknown as readonly AssistantStreamRecord[],
+        )
+      } catch (error: unknown) {
+        // Baseline content is untrusted wire data: a member the page validator
+        // rejects (producer/consumer skew) must not fail the whole window
+        // replacement. The prefix stays unrendered; the live suffix and the
+        // durable settlement still arrive through the normal fold.
+        console.error('[session-controller] assistant stream baseline expansion failed; opening without reconstructed chunks:', error)
+      }
+      for (const [index, member] of reconstructed.entries()) {
         this.transientInGap += 1
         visible.push({
           type: 'transient',

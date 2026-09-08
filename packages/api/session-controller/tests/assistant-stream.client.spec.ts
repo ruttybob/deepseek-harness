@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { LlmAttemptId, createAssistantMessage } from '@deepseek-ai/dsh-llm'
 import { SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session'
 import type {
@@ -120,6 +120,26 @@ describe('ClientAssistantStream', () => {
 
     expect(stream.replace([], baseline(3))).toHaveLength(2)
     expect(stream.replace([])).toEqual([])
+  })
+
+  it('degrades a malformed baseline to durable-only content and keeps the live attempt', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      const stream = new ClientAssistantStream()
+      const durable = ordinary(4)
+      const malformed = baseline(1)
+      // A validator-skewed producer shape (dev bundle swap): one raw chunk the
+      // lossless-JSON check rejects. The fake bypasses wire JSON, which is how
+      // such a value reaches the fold.
+      const first = malformed.activeAttempt?.stream[0] as { chunk: Record<string, unknown> }
+      first.chunk = { type: 'usage', usage: { inputTokens: Number.NaN, outputTokens: 1 } }
+      expect(stream.replace([durable], malformed)).toEqual([durable])
+      expect(errorSpy).toHaveBeenCalledOnce()
+      // The attempt stays open: live frames continue from the baseline's nextIndex.
+      expect(stream.acceptFrame(chunkFrame(1))).toEqual(expect.objectContaining({ type: 'transient' }))
+    } finally {
+      errorSpy.mockRestore()
+    }
   })
 
   it('passes through durable events not owned by the active attempt', () => {

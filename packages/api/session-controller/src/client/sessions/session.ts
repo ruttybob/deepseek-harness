@@ -6,6 +6,7 @@ import type { AttachmentIdType, FileAttachmentRef, ImageAttachmentRef } from '@d
 import type { SubagentAddress } from '@deepseek-ai/dsh-subagent/client'
 import type { MessageId } from '@deepseek-ai/dsh-llm/brand'
 import { SessionLogOffset, SessionSeq, type SessionId } from '@deepseek-ai/dsh-session/types'
+import { assertNever } from '@deepseek-ai/dsh-util-values'
 import { SessionEventStream } from '../transport.ts'
 import type { SessionJournalChange } from '../transport.ts'
 import type {
@@ -55,6 +56,21 @@ export const PAGE_MESSAGES = 50
 /** Messages requested per page while a turn jump loops backwards (fewer, larger round trips). */
 export const JUMP_PAGE_MESSAGES = 200
 
+/**
+ * Milliseconds one opening may take before the Session settles it into the
+ * error state instead of latching `loading`. Mirrors the connection
+ * generation-ready budget: an opening already requires a live generation, so
+ * a per-session budget of the same scale only fires on a wedge the transport
+ * layer cannot see (a lost mux logical stream, a wedged Host follow).
+ */
+export const OPEN_TIMEOUT_MS = 15_000
+
+/** One settled opening await: the snapshot landed, the deadline fired, or the transport failed. */
+type OpeningOutcome =
+  | { readonly kind: 'opened' }
+  | { readonly kind: 'timeout' }
+  | { readonly kind: 'failed'; readonly error: unknown }
+
 /** Manager-owned observers of a Session object's local state edges. */
 export interface SessionOptions {
   /** Catalog-discovered address selecting non-activating subagent transport. */
@@ -76,6 +92,12 @@ export interface SessionOptions {
    * private store (bare object-layer construction).
    */
   projections?: ProjectionValueStore
+  /**
+   * Opening deadline in ms: an opening snapshot that has not landed by then
+   * settles the open into the error state instead of latching `loading`.
+   * Default: {@link OPEN_TIMEOUT_MS}.
+   */
+  openTimeoutMs?: number
 }
 
 /**
@@ -105,6 +127,7 @@ export class Session implements SessionFace {
   private running = false
   private address: SubagentAddress | undefined
   private parentAvailable: boolean | undefined
+  private readonly openTimeoutMs: number
   /**
    * Sticky send marker, private input of the composerPhase derivation: set
    * synchronously before prompt()'s first await, never reset — the blank →
@@ -169,6 +192,10 @@ export class Session implements SessionFace {
     this.projections = options.projections ?? new ProjectionValueStore()
     this.address = options.address
     this.parentAvailable = options.parentAvailable
+    this.openTimeoutMs = options.openTimeoutMs ?? OPEN_TIMEOUT_MS
+    if (!Number.isFinite(this.openTimeoutMs) || this.openTimeoutMs <= 0) {
+      throw new RangeError(`session openTimeoutMs must be a positive finite number, got ${String(this.openTimeoutMs)}`)
+    }
     this.notifier = new Notifier(() => {
       this.snapshotCache = this.buildSnapshot()
     })
@@ -375,7 +402,10 @@ export class Session implements SessionFace {
     return { ok: true, value: { matched: result.value !== undefined } }
   }
 
-  /** First open: pull the tail page (idempotent — in-flight/already-open returns the existing promise). */
+  /** First open: pull the tail page (idempotent — in-flight/already-open returns the existing
+   *  promise). Failures — including a hung opening past its deadline and local faults — land in
+   *  `openState`/`openError`; this promise settles instead of rejecting, so a `void` caller
+   *  cannot lose the outcome and the next call re-enters while the open is not `open`. */
   open(): Promise<void> {
     if (this.openState === 'open') return Promise.resolve()
     if (this.openPromise !== null) return this.openPromise
@@ -602,7 +632,12 @@ export class Session implements SessionFace {
 
   // ---- Private ----
 
-  /** @param generation - openGeneration at launch; stale passes cannot publish after replacement. */
+  /**
+   * Open the event window: loading → open, or loading → error. Every failure
+   * settles into the snapshot (deadline, transport, or local fault) — the
+   * open never rejects and `openState` never latches `loading`.
+   * @param generation - openGeneration at launch; stale passes cannot publish after replacement.
+   */
   private async doOpen(generation: number): Promise<void> {
     this.openState = 'loading'
     this.openError = null
@@ -617,19 +652,56 @@ export class Session implements SessionFace {
       },
     })
     this.events = events
+    let timer: ReturnType<typeof setTimeout> | undefined
     try {
-      await events.open({ maxMessages: PAGE_MESSAGES })
+      const outcome = await Promise.race<OpeningOutcome>([
+        events.open({ maxMessages: PAGE_MESSAGES }).then((): OpeningOutcome => ({ kind: 'opened' }), (error: unknown): OpeningOutcome => ({ kind: 'failed', error })),
+        new Promise<OpeningOutcome>((resolve) => {
+          timer = setTimeout(() => { resolve({ kind: 'timeout' }) }, this.openTimeoutMs)
+        }),
+      ])
       if (generation !== this.openGeneration || this.events !== events) return
-      this.openState = 'open'
-    } catch (error) {
-      if (generation !== this.openGeneration || this.events !== events) return
-      if (!isRemoteFailure(error)) throw error
-      this.events = undefined
-      this.openState = 'error'
-      this.openError = error
+      switch (outcome.kind) {
+        case 'timeout': {
+          // The transport still pends; detach and tear it down so its late
+          // writes drop and the next open() builds a fresh stream.
+          this.events = undefined
+          void events.dispose()
+          const message = `session event stream opening did not complete within ${String(this.openTimeoutMs)}ms`
+          console.warn(`[session-controller] ${message}`)
+          this.openState = 'error'
+          this.openError = new RemoteError('gateway/internal', message, {})
+          return
+        }
+        case 'opened':
+          this.openState = 'open'
+          return
+        case 'failed':
+          this.events = undefined
+          this.openState = 'error'
+          this.openError = this.markOpeningFailure(outcome.error)
+          return
+        default:
+          assertNever(outcome, 'Session.doOpen')
+      }
     } finally {
+      clearTimeout(timer)
       if (generation === this.openGeneration) this.notifier.markDirty()
     }
+  }
+
+  /** Land one opening failure in the snapshot: Host-marked failures pass through;
+   *  local faults are logged and marked so a `void open()` caller cannot lose them.
+   *  @param error - the caught opening failure. */
+  private markOpeningFailure(error: unknown): RemoteFailure {
+    if (isRemoteFailure(error)) return error
+    console.error('[session-controller] session opening failed:', error)
+    return new RemoteError(
+      'gateway/internal',
+      error instanceof Error ? error.message : String(error),
+      {},
+      { cause: error },
+    )
   }
 
   /** Apply one contiguous journal update already reconciled by the Remote stream. */

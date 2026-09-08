@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-08-session-open-never-latches-loading.md
+2026-09-08-session-open-never-latches-loading.md: bebb9da2903a5965e206e5d7f557c828f28d4099
+2026-09-08-session-open-never-latches-loading.zh.md: f1cdd3ef00281aebdf6a8c1bc705b791c5e9b33b
