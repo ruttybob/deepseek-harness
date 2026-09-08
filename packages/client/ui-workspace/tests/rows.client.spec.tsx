@@ -448,7 +448,7 @@ describe('workspace browser rows', () => {
     }
   })
 
-  it('session row menu opens without opening the session and dispatches rename, fork, and archive', () => {
+  it('session row menu opens without opening the session and dispatches rename and fork', () => {
     const onOpen = vi.fn()
     const onRename = vi.fn()
     const onFork = vi.fn()
@@ -461,8 +461,8 @@ describe('workspace browser rows', () => {
       onRename={onRename} onFork={onFork} onArchive={onArchive} t={t} />)
     fireEvent.click(screen.getByRole('button', { name: '会话“One”的操作' }))
     expect(onOpen).not.toHaveBeenCalled()
-    // Archive is not destructive (log and accounting slot remain): no danger styling.
-    expect(screen.getByRole('menuitem', { name: '归档会话' }).className).not.toMatch(/danger/)
+    // Archive is not in the ellipsis menu: it has its own row button.
+    expect(screen.queryByRole('menuitem', { name: '归档会话' })).toBeNull()
     // Rename dispatches with the current display title (dialog prefill).
     fireEvent.click(screen.getByRole('menuitem', { name: '重命名' }))
     expect(screen.queryByRole('menu')).toBeNull()
@@ -471,16 +471,55 @@ describe('workspace browser rows', () => {
     fireEvent.click(screen.getByRole('button', { name: '会话“One”的操作' }))
     fireEvent.click(screen.getByRole('menuitem', { name: '分叉会话' }))
     expect(onFork).toHaveBeenCalledWith(node.id)
-    // Archive dispatches without opening the session.
-    fireEvent.click(screen.getByRole('button', { name: '会话“One”的操作' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: '归档会话' }))
-    expect(onArchive).toHaveBeenCalledWith(node.id)
     expect(onRename).toHaveBeenCalledOnce()
     expect(onOpen).not.toHaveBeenCalled()
     // Escape closes without selecting (Menu onClose path).
     fireEvent.click(screen.getByRole('button', { name: '会话“One”的操作' }))
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('menu')).toBeNull()
+    // The archive button sits beside the menu and commits without a dialog.
+    fireEvent.click(screen.getByRole('button', { name: '归档会话“One”' }))
+    expect(onArchive).toHaveBeenCalledWith(node.id)
+    expect(onOpen).not.toHaveBeenCalled()
+  })
+
+  it('archive button blocks a live session with a popup and archives an idle one directly', () => {
+    const onOpen = vi.fn()
+    const onArchive = vi.fn()
+    const node: SessionNode = {
+      id: sid('s1'), title: 'One', blank: false, running: true,
+      runningSubagentCount: 0, completed: false, hasActiveSchedule: false, updatedAt: 0,
+    }
+    const view = render(<SessionNodeItem node={node} currentId={undefined} now={0} onOpen={onOpen}
+      onRename={vi.fn()} onFork={vi.fn()} onArchive={onArchive} t={t} />)
+    fireEvent.click(screen.getByRole('button', { name: '归档会话“One”' }))
+    // Own turn in flight: no archive call, the popup explains instead.
+    expect(onArchive).not.toHaveBeenCalled()
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: '会话正在运行' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '好的' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    // Subagent-only activity blocks the same way (Escape closes too).
+    view.rerender(<SessionNodeItem
+      node={{ ...node, running: false, runningSubagentCount: 2 }}
+      currentId={undefined} now={0} onOpen={onOpen}
+      onRename={vi.fn()} onFork={vi.fn()} onArchive={onArchive} t={t} />)
+    fireEvent.click(screen.getByRole('button', { name: '归档会话“One”' }))
+    expect(onArchive).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: '会话正在运行' })).toBeTruthy()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(onArchive).not.toHaveBeenCalled()
+
+    // Idle session: the click archives directly, no dialog in between.
+    view.rerender(<SessionNodeItem
+      node={{ ...node, running: false, runningSubagentCount: 0 }}
+      currentId={undefined} now={0} onOpen={onOpen}
+      onRename={vi.fn()} onFork={vi.fn()} onArchive={onArchive} t={t} />)
+    fireEvent.click(screen.getByRole('button', { name: '归档会话“One”' }))
+    expect(onArchive).toHaveBeenCalledWith(node.id)
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
 

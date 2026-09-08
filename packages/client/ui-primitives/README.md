@@ -50,7 +50,7 @@ Check this table before writing a control in a feature package. A plugin cannot 
 | `HoverCard` | Hover preview the pointer can rest on and select from; optional copy button. |
 | `Toast` | Transient top-center banner held for the owner's `holdMs`. |
 | `JsonTree`, `JsonBlock` | Read-only JSON inspection. |
-| `MarkdownText`, `CodeBlock` | Untrusted GFM with TeX math, and highlighted code. |
+| `MarkdownText`, `CodeBlock`, `DiagramFence` | Untrusted GFM with TeX math, highlighted code, and settled mermaid diagrams. |
 | `TerminalBlock`, `ReadBlock`, `DiffBlock`, `SearchBlock`, `WebBlock` | The agent-output card matching each tool-result intent. |
 | `icons/*`, `FishLogo`, `BrandWordmark`, `ReferenceIcon`, `LinkIcon`, `DocumentFileIcon` | Glyphs and brand marks, all riding `currentColor`. |
 
@@ -69,6 +69,8 @@ The catalog above lists what each export is for; this section covers the behavio
 ### Rendering agent output
 
 `MarkdownText` renders untrusted GFM and TeX math, blocks unsafe links and images, and can turn resolved file mentions into explicit controls. While a reply streams, it freezes completed blocks, advances a top-level open fence by completed lines, and highlights that fence from saved Shiki grammar state. Completed token lines enter fixed-size React groups, so later chunks reconcile only the growing group; an unchanged fence retains that DOM when the final full parse resolves cross-document syntax. `TerminalBlock`, `ReadBlock`, `DiffBlock`, `SearchBlock`, and `WebBlock` render the matching tool-result intent with copy controls, overflow handling, and ANSI processing where applicable. `JsonTree` and `JsonBlock` inspect JSON values read-only, while `projectUserText` projects sent user text into inline plain runs and reference chips for the message bubble and queue rows.
+
+A settled `mermaid` fence renders as a diagram through `DiagramFence`, which owns the whole fallback ladder: while the message streams, or while the lazy mermaid engine chunk loads, the reader sees the ordinary code block; a source that fails to parse or render falls back to the code block plus an error pill whose tooltip carries the engine message. The engine runs behind one loader seam (`renderMermaidSvg(source, theme)`) at `securityLevel: 'strict'`, so source-authored clicks and HTML labels never execute; its renders serialize through one queue with a unique diagram id each. The generated SVG is consumed as trusted generator output, the same model as the shiki span trees, and the banner carries the mermaid label plus copy-source with the shared code-fence label pair.
 
 
 ### Localizing copy

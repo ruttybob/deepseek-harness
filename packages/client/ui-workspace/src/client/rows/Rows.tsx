@@ -2,15 +2,17 @@
  * Workspace browser tree row components (figma Cell set 14:3080): pure presentational —
  * all data and callbacks arrive via props. Hover swaps (folder->chevron,
  * time->ellipsis, action buttons) are CSS-only. Row ... menus are visual-only
- * except workspace Rename/Delete and session Rename/Fork/Archive; the session
- * and workspace hover cards are suppressed while a menu is open.
+ * except workspace Rename/Delete and session Rename/Fork; session Archive has
+ * its own hover button (blocked with an explanation popup while the session
+ * or its subagents are still running); the session and workspace hover cards
+ * are suppressed while a menu is open.
  */
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import {
-  HoverCard, IconAlarmClockOutline16, IconArchiveOutline20, IconBranchOutline16,
+  Button, HoverCard, IconAlarmClockOutline16, IconArchiveOutline20, IconBranchOutline16,
   IconEditOutline16, IconEllipsisOutline16, IconFolderClose16, IconFolderOpen16,
-  IconPlusOutline16, IconTrashOutline16, IconTriangleRightFill14, Menu, relativeTime,
+  IconPlusOutline16, IconTrashOutline16, IconTriangleRightFill14, Menu, Modal, relativeTime,
   StateDot,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { StateDotState } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -369,7 +371,8 @@ export function SearchResultItem({ result, currentId, onOpen, t }: {
  * @param props.onOpen - open a session by id.
  * @param props.onRename - open the session rename dialog (id + current title).
  * @param props.onFork - fork a session at its last completed turn.
- * @param props.onArchive - archive a session by id.
+ * @param props.onArchive - archive a session by id (row button action; the
+ *   button refuses with an explanation popup while the session is live).
  * @param props.onReveal - scroll this row into view after search navigation, then acknowledge it.
  * @param props.drag - optional draggable-row wiring.
  * @param props.flat - omit the empty status slot in the hierarchy-free flat list.
@@ -404,6 +407,7 @@ export function SessionNodeItem({
   const primaryStatus = statuses[0]
   const showStatus = primaryStatus.state !== 'done' || row.completed
   const [menuOpen, setMenuOpen] = useState(false)
+  const [archiveBlockedOpen, setArchiveBlockedOpen] = useState(false)
   const rowRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (onReveal === undefined) return
@@ -412,12 +416,14 @@ export function SessionNodeItem({
   }, [onReveal])
   // Archive hides the row through the registry-global archive set and never
   // touches the session log, so it is not styled as destructive and needs no
-  // confirmation dialog.
+  // confirmation dialog. A live session (own turn or running subagents —
+  // the same activity the row's ongoing dot reports, regardless of whether a
+  // pending interaction outranks it in the status slot) stays out of the set:
+  // the button explains instead of silently hiding running work.
+  const runningLive = node.running || node.runningSubagentCount > 0
   const sessionMenuItems = [
     { id: 'rename', label: t('rename'), icon: <IconEditOutline16 /> },
     { id: 'fork', label: t('menu.fork'), icon: <IconBranchOutline16 /> },
-    // 20-native glyph in the menu's 16px icon slot (Menu.module.css .itemIcon).
-    { id: 'archive', label: t('menu.archiveSession'), icon: <IconArchiveOutline20 size={16} /> },
   ]
   // Figma session cell: pad 8, status slot 16, then a 4px title gap.
   const ownRow = (
@@ -473,6 +479,19 @@ export function SessionNodeItem({
       {!row.blank && <span className={css.time}>{timeLabel(row.updatedAt, now, t)}</span>}
       {!row.blank && (
         <span className={css.rowActions}>
+          <button
+            type="button"
+            className={css.iconButton}
+            aria-label={t('actions.archiveSession.aria', { name: title })}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (runningLive) setArchiveBlockedOpen(true)
+              else onArchive(node.id)
+            }}
+          >
+            {/* 20-native glyph in the row's 16px icon slot. */}
+            <IconArchiveOutline20 size={16} />
+          </button>
           <Menu
             open={menuOpen}
             onClose={() => { setMenuOpen(false) }}
@@ -481,7 +500,6 @@ export function SessionNodeItem({
               setMenuOpen(false)
               if (id === 'rename') onRename(node.id, row.title)
               if (id === 'fork') onFork(node.id)
-              if (id === 'archive') onArchive(node.id)
             }}
             portal
             closeOnPointerLeave
@@ -501,13 +519,30 @@ export function SessionNodeItem({
     </div>
   )
   return (
-    <HoverCard
-      anchor={ownRow}
-      content={<SessionHoverContent node={node} now={now} t={t} />}
-      disabled={menuOpen || drag?.active === true}
-      copyText={row.blank ? undefined : row.title}
-      copyLabel={t('copy')}
-      copiedLabel={t('hover.copied')}
-    />
+    <>
+      <HoverCard
+        anchor={ownRow}
+        content={<SessionHoverContent node={node} now={now} t={t} />}
+        disabled={menuOpen || archiveBlockedOpen || drag?.active === true}
+        copyText={row.blank ? undefined : row.title}
+        copyLabel={t('copy')}
+        copiedLabel={t('hover.copied')}
+      />
+      {/* Archive-blocked popup: row-local because a blocked archive never
+          unmounts the row (only the archive echo can hide it), and the popup
+          is pure presentation over the node facts already in props. */}
+      <Modal
+        open={archiveBlockedOpen}
+        onClose={() => { setArchiveBlockedOpen(false) }}
+        closeLabel={t('close')}
+        title={t('archive.blocked.title')}
+        description={t('archive.blocked.desc')}
+        footer={(
+          <Button variant="primary" onClick={() => { setArchiveBlockedOpen(false) }}>
+            {t('archive.blocked.ok')}
+          </Button>
+        )}
+      />
+    </>
   )
 }

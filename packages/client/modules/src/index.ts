@@ -92,7 +92,8 @@ interface ClientPackageSource extends ResolvedPkgMeta {
 }
 
 /** Recovery instruction shared by grouped startup and steady-state bundle diagnostics. */
-const CLIENT_BUNDLE_BUILD_INSTRUCTION = 'run `pnpm run build` before launch'
+const CLIENT_BUNDLE_BUILD_INSTRUCTION =
+  'run `pnpm run build:lib:client` (full `pnpm run build` on a clean checkout) before launch'
 
 /** Missing built client export, retained as structured data for activation-error grouping. */
 class MissingClientBundleError extends Error {

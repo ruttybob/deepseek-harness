@@ -39,6 +39,9 @@ export const en = {
   'json.label': 'JSON',
   'markdown.footnotes': 'Footnotes',
   'markdown.truncatedCharacters': '… truncated at {total} characters',
+  'markdown.diagram.zoomIn': 'Zoom in',
+  'markdown.diagram.zoomOut': 'Zoom out',
+  'markdown.diagram.error': 'Diagram unavailable',
   'number.thousand': '{value}K',
   'number.million': '{value}M',
 } satisfies Record<CommonKey, string>

@@ -37,6 +37,9 @@ export const zh = {
   'json.label': 'JSON',
   'markdown.footnotes': '脚注',
   'markdown.truncatedCharacters': '… 已截断，共 {total} 字符',
+  'markdown.diagram.zoomIn': '放大',
+  'markdown.diagram.zoomOut': '缩小',
+  'markdown.diagram.error': '图表无法显示',
   'number.thousand': '{value}K',
   'number.million': '{value}M',
 } satisfies Record<string, string>

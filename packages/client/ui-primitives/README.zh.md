@@ -50,7 +50,7 @@ kind: "package-library"
 | `HoverCard` | 指针可停留、可选中的悬停预览；可选带复制按钮。 |
 | `Toast` | 顶部居中的瞬时横幅，保持时长由所有者的 `holdMs` 决定。 |
 | `JsonTree`、`JsonBlock` | 只读 JSON 查看。 |
-| `MarkdownText`、`CodeBlock` | 不可信 GFM 与 TeX 数学，以及高亮代码。 |
+| `MarkdownText`、`CodeBlock`、`DiagramFence` | 不可信 GFM 与 TeX 数学、高亮代码，以及定稿的 mermaid 图表。 |
 | `TerminalBlock`、`ReadBlock`、`DiffBlock`、`SearchBlock`、`WebBlock` | 与各类工具结果意图对应的 agent 输出卡片。 |
 | `icons/*`、`FishLogo`、`BrandWordmark`、`ReferenceIcon`、`LinkIcon`、`DocumentFileIcon` | 字形与品牌标识，全部随 `currentColor`。 |
 
@@ -69,6 +69,8 @@ kind: "package-library"
 ### 渲染 agent 输出
 
 `MarkdownText` 渲染不可信的 GFM 与 TeX 公式、阻止不安全的链接与图片，并可把已解析的文件提及转换为显式控件。回复流式输出时，它冻结已完成的块、按已完成行推进顶层未闭合 fence，并从保存的 Shiki grammar state 为该 fence 增量高亮。已完成的 token 行进入固定大小的 React 分组，后续分片只 reconcile 正在增长的分组；最终全量解析解决跨文档语法时，未变化的 fence 会保留该 DOM。`TerminalBlock`、`ReadBlock`、`DiffBlock`、`SearchBlock` 与 `WebBlock` 把对应的工具结果意图渲染为带复制控件、溢出处理及适用时 ANSI 处理的卡片。`JsonTree` 与 `JsonBlock` 以只读方式检查 JSON 值；`projectUserText` 把已发送的用户文本投影为行内普通文本段与引用 chip，供消息气泡和排队行使用。
+
+定稿的 `mermaid` fence 通过 `DiagramFence` 渲染为图表，它拥有完整的回退阶梯：消息仍在流式输出、或懒加载的 mermaid 引擎 chunk 尚在加载时，读者看到的是普通代码块；解析或渲染失败的源回退为代码块，并附加一个错误 pill，其 tooltip 携带引擎报错。引擎藏在唯一的 loader 接缝（`renderMermaidSvg(source, theme)`）之后，以 `securityLevel: 'strict'` 运行，因此源内编写的点击与 HTML label 永不执行；其渲染经由单一队列串行化，每次渲染使用唯一的图表 id。生成的 SVG 作为受信的生成器输出消费，与 shiki span 树同一模型；横幅携带 mermaid 标签以及复用代码 fence 文案对的复制源码按钮。
 
 
 ### 本地化文案

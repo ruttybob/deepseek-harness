@@ -27,6 +27,13 @@ function tooltip(description: string | undefined): { title?: string } {
 export function PlanReviewPanel({ pending, review, t }: PlanReviewPanelProps) {
   const markdownLabels = useMemo(() => ({
     code: { copyLabel: t('copy'), copiedLabel: t('copied') },
+    diagram: {
+      zoomIn: t('markdown.diagram.zoomIn'),
+      zoomOut: t('markdown.diagram.zoomOut'),
+      expand: t('expand'),
+      close: t('close'),
+      error: t('markdown.diagram.error'),
+    },
     footnotes: t('markdown.footnotes'),
   }), [t])
   // The panel waits for the host's resolved frame before leaving, so repeated

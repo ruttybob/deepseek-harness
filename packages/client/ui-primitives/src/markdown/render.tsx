@@ -23,6 +23,7 @@ import type * as Md from 'mdast'
 import type {} from 'mdast-util-math'
 import { normalizeUri } from 'micromark-util-sanitize-uri'
 import { CodeBlock } from './CodeBlock.tsx'
+import { DiagramFence } from './DiagramFence.tsx'
 import { renderTexToReact } from './katex.tsx'
 import { LinkIcon, classifyLinkPath } from '../LinkIcon.tsx'
 import type { PositionedBlock } from './incremental.ts'
@@ -36,9 +37,24 @@ export interface MarkdownCodeLabels {
   copiedLabel: string
 }
 
+/** Localized diagram-banner chrome for mermaid fences (the code copy pair is reused for copy-source). */
+export interface MarkdownDiagramLabels {
+  /** Zoom-in banner button accessible label. */
+  zoomIn: string
+  /** Zoom-out banner button accessible label. */
+  zoomOut: string
+  /** Expand-to-modal banner button accessible label. */
+  expand: string
+  /** Modal close-button accessible label. */
+  close: string
+  /** Fixed short pill message when a diagram fails to parse or render (details live in its tooltip). */
+  error: string
+}
+
 /** Localized chrome for a Markdown document. */
 export interface MarkdownLabels {
   code: MarkdownCodeLabels
+  diagram: MarkdownDiagramLabels
   footnotes: string
 }
 
@@ -328,6 +344,12 @@ function renderCode(node: Md.Code, key: Key, context: MarkdownRenderContext): Re
     // ```math fences render as display TeX once settled (rehype-katex parity);
     // its text extraction saw the code block's trailing newline.
     return <Fragment key={key}>{renderTexToReact(`${node.value}\n`, true)}</Fragment>
+  }
+  if (!context.streaming && lang === 'mermaid') {
+    // ```mermaid fences render as diagrams once settled (the math arm's
+    // settled-only rule): streaming keeps the ordinary code block, and the
+    // fence component owns the engine-loading and failure fallbacks.
+    return <DiagramFence key={key} code={node.value} labels={context.labels} />
   }
   return (
     <CodeBlock

@@ -256,6 +256,14 @@ const CORPUS: Record<string, string> = {
 }
 
 describe('MarkdownText DOM parity fixtures', () => {
+  it('diagram fences are excluded from the DOM-parity corpus', () => {
+    // The engine stamps nondeterministic ids into its SVG, so a settled
+    // mermaid case could not pin bytes; the diagram surface is covered
+    // behaviorally in markdown-diagram.client.spec.tsx with the loader mocked.
+    const mermaidCase = Object.entries(CORPUS).find(([, text]) => text.includes('```mermaid'))
+    expect(mermaidCase).toBeUndefined()
+  })
+
   for (const [name, text] of Object.entries(CORPUS)) {
     it(`settled: ${name}`, async () => {
       await expect(renderCase(text, false)).toMatchFileSnapshot(`./fixtures/markdown-dom/${name}.settled.txt`)

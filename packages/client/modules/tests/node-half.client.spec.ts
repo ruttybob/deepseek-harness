@@ -438,7 +438,7 @@ describe('client bundle activation', () => {
     const secondPath = writePackage(secondName)
     expect(() => construct([firstName, secondName])).toThrow([
       'client-modules: 2 client packages failed to compose:',
-      '  client bundles not found; run `pnpm run build` before launch:',
+      '  client bundles not found; run `pnpm run build:lib:client` (full `pnpm run build` on a clean checkout) before launch:',
       `    - package: ${firstName}`,
       `      path: ${firstPath}`,
       `    - package: ${secondName}`,
@@ -455,7 +455,7 @@ describe('client bundle activation', () => {
     const secondSource = writeSourcePostdatingBundle(secondPath, 60_000)
     expect(() => construct([firstName, secondName])).toThrow([
       'client-modules: 2 client packages failed to compose:',
-      '  client bundles older than package sources; run `pnpm run build` before launch:',
+      '  client bundles older than package sources; run `pnpm run build:lib:client` (full `pnpm run build` on a clean checkout) before launch:',
       `    - package: ${firstName}`,
       `      path: ${firstPath}`,
       `      newest source: ${firstSource.path} at ${new Date(firstSource.mtimeMs).toISOString()}`,

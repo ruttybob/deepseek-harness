@@ -10,6 +10,9 @@ import type {
 
 export const markdownLabels: MarkdownLabels = {
   code: { copyLabel: '复制', copiedLabel: '复制成功' },
+  diagram: {
+    zoomIn: '放大', zoomOut: '缩小', expand: '展开', close: '关闭', error: '图表无法显示',
+  },
   footnotes: 'Footnotes',
 }
 
