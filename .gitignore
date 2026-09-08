@@ -46,3 +46,8 @@ worktrees/
 .dolt/
 .beads/
 .beads-credential-key
+
+# Agent session state (personal tooling)
+.lavish/
+.unlazy/
+.pi/stash.json
