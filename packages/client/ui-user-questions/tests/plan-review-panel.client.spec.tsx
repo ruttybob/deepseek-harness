@@ -222,7 +222,7 @@ describe('PlanReviewPanel', () => {
     render(<QuestionComposer matched={carrier} {...kit} />)
 
     const approve = screen.getByRole('button', { name: zh['plan.approve'] })
-    expect(approve.getAttribute('title')).toBe('Leave plan mode; the plan is carried out from the next step.')
+    expect(approve.getAttribute('title')).toBe('Leave plan mode; the plan is carried out from the next step. (Cmd/Ctrl+↵)')
     fireEvent.click(approve)
     expect(answer).toHaveBeenCalledWith(decision('Approve'))
     // One-shot: every action locks until the host's resolved frame lands.
@@ -238,6 +238,62 @@ describe('PlanReviewPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: zh['plan.decline'] }))
     expect(answer).toHaveBeenCalledWith(decision('Keep planning'))
+  })
+
+  it('approves with Cmd+Enter from outside any text field', () => {
+    const { carrier, answer } = wait()
+    render(<QuestionComposer matched={carrier} {...kit} />)
+
+    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
+    expect(answer).toHaveBeenCalledWith(decision('Approve'))
+  })
+
+  it('approves with the Ctrl variant for non-Mac keyboards', () => {
+    const { carrier, answer } = wait()
+    render(<QuestionComposer matched={carrier} {...kit} />)
+
+    fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true })
+    expect(answer).toHaveBeenCalledWith(decision('Approve'))
+  })
+
+  it('ignores plain and shifted Enter without the accelerator', () => {
+    const { carrier, answer } = wait()
+    render(<QuestionComposer matched={carrier} {...kit} />)
+
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.keyDown(document.body, { key: 'Enter', shiftKey: true })
+    expect(answer).not.toHaveBeenCalled()
+  })
+
+  it('leaves an accelerated Enter to a text field that owns it', () => {
+    const { carrier, answer } = wait()
+    render(<QuestionComposer matched={carrier} {...kit} />)
+
+    // The composer input keeps its send semantics: a gesture starting inside
+    // a field must reach that field, not the panel.
+    const field = document.createElement('textarea')
+    document.body.appendChild(field)
+    fireEvent.keyDown(field, { key: 'Enter', metaKey: true })
+    expect(answer).not.toHaveBeenCalled()
+  })
+
+  it('ignores a composition-closing accelerated Enter', () => {
+    const { carrier, answer } = wait()
+    render(<QuestionComposer matched={carrier} {...kit} />)
+
+    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true, keyCode: 229 })
+    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true, isComposing: true })
+    expect(answer).not.toHaveBeenCalled()
+  })
+
+  it('answers once while a decision is in flight', () => {
+    const { carrier, answer } = wait()
+    render(<QuestionComposer matched={carrier} {...kit} />)
+
+    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
+    // Busy removes the listener: the repeat (or a held key) cannot re-answer.
+    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
+    expect(answer).toHaveBeenCalledTimes(1)
   })
 
   it('dismisses the request so the composer returns for a plain message', () => {

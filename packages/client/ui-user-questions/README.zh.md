@@ -33,7 +33,7 @@ kind: "package-reference"
 
 ### plan-review 卡片
 
-`plan-review` 意图——由 `dsh-plan-mode` 在 `exit_plan_mode` 审阅上设置——渲染等待审批卡片的布局：一条 `Plan review` 条带、计划作为可滚动的 markdown 主体，以及一行 `Chat about it` / `Refuse` / `Approve` 的决定操作。Approve 与 Refuse 用提问方自己的选项标签回答；`Chat about it` 以 `ASK_CANCELLED` 拒绝该等待，让编辑器归位，用户可以直接说出他想说的话。
+`plan-review` 意图——由 `dsh-plan-mode` 在 `exit_plan_mode` 审阅上设置——渲染等待审批卡片的布局：一条 `Plan review` 条带、计划作为可滚动的 markdown 主体，以及一行 `Chat about it` / `Refuse` / `Approve` 的决定操作。Approve 与 Refuse 用提问方自己的选项标签回答；`Chat about it` 以 `ASK_CANCELLED` 拒绝该等待，让编辑器归位，用户可以直接说出他想说的话。在文本输入框之外的任何位置按 `Cmd/Ctrl+Enter` 都会确认执行——编辑器输入框保留自己的发送语义，输入法合成中的回车与按住不放的按键会被忽略——当提问方的选项带描述时，确认按钮的 tooltip 会附带这个快捷键提示。
 
 ### 失败与恢复
 

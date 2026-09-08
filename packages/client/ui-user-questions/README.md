@@ -33,7 +33,7 @@ A multi-select draft keeps its selected labels while the user opens or edits the
 
 ### The plan-review card
 
-A `plan-review` intent — set by `dsh-plan-mode` on the `exit_plan_mode` review — renders the waiting-approval card layout: a `Plan review` strip, the plan as the scrolling markdown body, and one decision row of `Chat about it` / `Refuse` / `Approve`. Approve and Refuse answer with the asker's own option labels; `Chat about it` rejects the wait as `ASK_CANCELLED`, returning the composer so the user can say what they want instead.
+A `plan-review` intent — set by `dsh-plan-mode` on the `exit_plan_mode` review — renders the waiting-approval card layout: a `Plan review` strip, the plan as the scrolling markdown body, and one decision row of `Chat about it` / `Refuse` / `Approve`. Approve and Refuse answer with the asker's own option labels; `Chat about it` rejects the wait as `ASK_CANCELLED`, returning the composer so the user can say what they want instead. `Cmd/Ctrl+Enter` approves from anywhere outside a text field — the composer input keeps its own send semantics, and an IME composition or held key is ignored — with the shortcut appended to the Approve tooltip when the asker's option carries a description.
 
 ### Failure and recovery
 
