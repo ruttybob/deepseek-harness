@@ -267,15 +267,12 @@ describe('startup cleanup sweep', () => {
   it('keeps a file exactly at the boundary (only strictly-older expires)', async () => {
     const dir = sessionDir(root, 'sess-1')
     mkdirSync(dir, { recursive: true })
-    // libuv's utime takes double seconds, so a sub-second boundary can round
-    // one microsecond low and the sweep reads the file as strictly older,
-    // deleting it. Aligning the boundary to a whole second keeps every
-    // conversion exact: seconds integral, microseconds zero, and the stored
-    // mtime equals the cutoff the sweep must keep.
-    const cutoffMs = Math.floor((Date.now() - 30 * DAY_MS) / 1000) * 1000
+    const requestedMs = Date.now() - 30 * DAY_MS
     const boundary = join(dir, 'boundary.txt')
     writeFileSync(boundary, 'x')
-    utimesSync(boundary, new Date(cutoffMs), new Date(cutoffMs))
+    utimesSync(boundary, requestedMs / 1000, requestedMs / 1000)
+    // Filesystems can round timestamps written through utimes.
+    const cutoffMs = statSync(boundary).mtimeMs
     await sweepSpillRoots({ roots: [active(root)], cutoffMs, warn: () => {} })
     expect(existsSync(boundary)).toBe(true)
   })
