@@ -20,8 +20,16 @@ export function MarkdownBody({ content, t }: MarkdownBodyProps): ReactNode {
   const copiedLabel = t('code.copied')
   const footnotes = t('footnotes')
   const labels = useMemo<MarkdownLabels>(() => ({
-    code: { copyLabel, copiedLabel }, footnotes,
-  }), [copyLabel, copiedLabel, footnotes])
+    code: { copyLabel, copiedLabel },
+    diagram: {
+      zoomIn: t('markdown.diagram.zoomIn'),
+      zoomOut: t('markdown.diagram.zoomOut'),
+      expand: t('markdown.diagram.expand'),
+      close: t('markdown.diagram.close'),
+      error: t('markdown.diagram.error'),
+    },
+    footnotes,
+  }), [copyLabel, copiedLabel, footnotes, t])
   if (content.kind !== 'text') return null
   return (
     <div className={css.document} data-document-markdown>
