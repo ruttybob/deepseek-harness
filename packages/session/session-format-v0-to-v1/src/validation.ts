@@ -197,11 +197,15 @@ export function assertReleasedEventPayload(event: SessionFormatEvent, version: 0
   const data = releasedV0Record(event.data, `${event.type} ${event.seq} data`)
   if (event.type === 'subagent/descriptor' && data['version'] !== 3) {
     const descriptorVersion = sessionFormatCount(data['version'], `${event.type} ${event.seq} version`)
-    if (version === 0) {
+    if (descriptorVersion > 3) {
       throw new SessionFormatUnsupportedMigrationError(
-        `${event.type} ${event.seq} uses unsupported descriptor version ${descriptorVersion}`,
+        `${event.type} ${event.seq} uses descriptor version ${descriptorVersion} newer than the supported version 3`,
       )
     }
+    // Historical descriptor versions carry the released member set, and the
+    // runtime descriptor reader ignores non-current versions, so both released
+    // generations admit them losslessly. A newer version's members are unknown
+    // here, so only those refuse.
     return
   }
   const versionOptional = version === 1 && event.type === 'session-log-deepseek/delivery-accepted'

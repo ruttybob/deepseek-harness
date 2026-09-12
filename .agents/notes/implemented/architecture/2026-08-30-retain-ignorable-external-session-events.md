@@ -12,7 +12,7 @@ That producer inventory did not cover a third-party plugin that currently depend
 
 ## Decision
 
-The canonical `SessionEvent` envelope retains `ignorable?: true`, and every representation preserves it: seed validation, JSONL, API transport, generated catalogs, and test fixtures. The persistence seam's stored-event validation (`validateStoredEvents`) continues to refuse an unknown event unless its stored envelope explicitly carries `ignorable: true`; absent remains required-on-read.
+The canonical `SessionEvent` envelope retains `ignorable?: true`, and every representation preserves it: seed validation, JSONL, API transport, generated catalogs, and test fixtures. The persistence seam's stored-event validation (`validateStoredEvents`) continues to refuse an unknown event unless its stored envelope explicitly carries `ignorable: true`; absent remains required-on-read. `Session.append` owns the write side: a non-surface call may pass an `ExternalEventIntent` carrying `ignorable: true`, and the append refuses the marker for any type the repository vocabulary knows — surface types are always known — so a first-party event cannot carry it.
 
 The field is removable only after a replacement supports the current third-party plugin across event production, persistence, reload, and transport, with an explicit cutover for sessions already containing the marker. The [session log versioning decision](2026-08-10-session-log-version-mechanism.md) continues to own the default-required safety rule and format-version policy.
 
@@ -30,4 +30,4 @@ Historical format migration is deliberately stricter in the alpha implementation
 
 ## Consequences
 
-Third-party informational events can remain reloadable when their stored records carry the explicit marker, while unknown required events still fail loudly. The field remains part of the public event envelope, JSONL representation, transport types, generated references, and their tests until a replacement satisfies the cutover condition.
+Third-party informational events can remain reloadable when their stored records carry the explicit marker, and repository-external writers store that marker through the `Session.append` `ExternalEventIntent` seam, while unknown required events still fail loudly. The field remains part of the public event envelope, JSONL representation, transport types, generated references, and their tests until a replacement satisfies the cutover condition.

@@ -15,10 +15,11 @@ import type { Scoped } from '@deepseek-ai/dsh-scope'
 import type { Message } from '@deepseek-ai/dsh-llm'
 import { SESSION_FORMAT_VERSION, SessionLogOffset, SessionSeq } from './types.ts'
 import type { TypertLookup } from '@deepseek-ai/dsh-typert-protocol'
-import type { CreateSessionOptions, EpochHeader, PrepareSessionOptions, RequestContext, SessionEvent, SessionEventMap, SessionEventType, SessionHeader, SessionId, SessionSeedEventState, SurfaceIntent, SurfaceEventType } from './types.ts'
+import type { CreateSessionOptions, EpochHeader, ExternalEventIntent, PrepareSessionOptions, RequestContext, SessionEvent, SessionEventMap, SessionEventType, SessionHeader, SessionId, SessionSeedEventState, SurfaceIntent, SurfaceEventType } from './types.ts'
 import { deriveEventMessage, SurfaceManager, validateSessionEventData, validateSurfaceMetadata } from './surface.ts'
 import type { SessionSurface } from './surface.ts'
 import { foldRequestHeader } from './request-header.ts'
+import { KNOWN_SESSION_EVENT_TYPES } from './known-event-types.ts'
 
 export * from './types.ts'
 export { SessionPreparation } from './preparation.ts'
@@ -673,42 +674,59 @@ export class Session {
    *
    * @param type - The event type (key of {@link SessionEventMap}).
    * @param data - The event payload; must be JSON-serializable.
-   * @param opts - Surface metadata: `surfaceOp` controls how the event enters
-   *   the ordered surface; `sourceEventSeqs` lists the seq numbers of earlier
-   *   events this one derives from. REQUIRED for
+   * @param opts - For surface event types: `surfaceOp` controls how the event
+   *   enters the ordered surface; `sourceEventSeqs` lists the seq numbers of
+   *   earlier events this one derives from. REQUIRED for
    *   {@link SurfaceEventType} events (every message-producing event must
    *   declare how it joins the surface, the sole source of derived model
-   *   history) and
-   *   rejected by the compiler for non-surface types like `turn/start` or
-   *   `assistant/attempt`. Assistant messages embed their exact provider
-   *   stream and cannot cite top-level source events.
+   *   history) and rejected by the compiler for non-surface types like
+   *   `turn/start` or `assistant/attempt`. Assistant messages embed their
+   *   exact provider stream and cannot cite top-level source events. For
+   *   non-surface event types: an {@link ExternalEventIntent} marking one
+   *   repository-external informational event `ignorable`.
    * @returns the logged event — its assigned `seq`/`time` plus the SNAPSHOT of
    *   `data` that entered the log, so reading `event.data` back sees the logged
    *   value, never the caller's still-mutable input.
    * @throws if `data` or surface metadata is not losslessly JSON-serializable
    *   (BigInt, function, symbol, undefined, negative zero, non-finite number,
    *   circular reference, sparse array, or an exotic object such as
-   *   Map/Set/Date/class instance), or when the candidate violates the
+   *   Map/Set/Date/class instance), when the candidate violates the
    *   request-header empty-field or tool-error consistency rules, or the
    *   canonical surface contract (marker shape and eligibility, unique
    *   earlier source-event references, positional replacement validity, and complete
-   *   shadowed-node coverage). One iterative pass reads, validates, and
-   *   copies each nested value once, so a stateful getter cannot supply one value
-   *   to validation and another to storage. The event log is the durable source
-   *   of truth, so a bad event fails at the append site rather than later during
-   *   a backend flush. A synchronous internal dispatch validation failure or an
-   *   append reentered while this acceptance/publication boundary is open also
-   *   rejects before the log changes.
+   *   shadowed-node coverage), or when an `ignorable` marker is not exactly
+   *   `true` or names a type the repository vocabulary already knows (surface
+   *   types are always known, so one check covers both). One iterative pass
+   *   reads, validates, and copies each nested value once, so a stateful
+   *   getter cannot supply one value to validation and another to storage.
+   *   The event log is the durable source of truth, so a bad event fails at
+   *   the append site rather than later during a backend flush. A synchronous
+   *   internal dispatch validation failure or an append reentered while this
+   *   acceptance/publication boundary is open also rejects before the log
+   *   changes.
    */
   append<T extends SessionEventType>(
     type: T,
     data: SessionEventMap[T],
-    ...opts: T extends SurfaceEventType ? [opts: SurfaceIntent<T>] : []
+    ...opts: T extends SurfaceEventType ? [opts: SurfaceIntent<T>] : [opts?: ExternalEventIntent]
   ): SessionEvent<T> {
-    const surfaceOpts: SurfaceIntent | undefined = opts[0]
+    // For surface types opts[0] is the SurfaceIntent; for non-surface types it is an
+    // ExternalEventIntent whose surface members are all absent, so the probes below
+    // produce the same empty spreads as before.
+    const surfaceOpts = opts[0] as SurfaceIntent | undefined
+    const ignorable = (opts[0] as ExternalEventIntent | undefined)?.ignorable
+    if (ignorable !== undefined) {
+      if (ignorable !== true) {
+        throw new Error(`session event "${type}" carries ignorable ${String(ignorable)}; the marker must be true when present`)
+      }
+      if (KNOWN_SESSION_EVENT_TYPES.has(type)) {
+        throw new Error(`session event "${type}" cannot be marked ignorable: the repository vocabulary knows this type, so every reader interprets it; the marker is reserved for repository-external informational events`)
+      }
+    }
     const surfaceMetadata = {
       ...surfaceOpts?.sourceEventSeqs === undefined ? {} : { sourceEventSeqs: surfaceOpts.sourceEventSeqs },
       ...surfaceOpts?.surfaceOp === undefined ? {} : { surfaceOp: surfaceOpts.surfaceOp },
+      ...(ignorable === true ? { ignorable: true as const } : {}),
     }
     const dataSnapshot = snapshotJsonValue(data)
     if (dataSnapshot === undefined) {

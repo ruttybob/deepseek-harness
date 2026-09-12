@@ -450,6 +450,20 @@ export type SurfaceIntent<T extends SurfaceEventType = SurfaceEventType> = {
 })
 
 /**
+ * Append-time intent for one repository-external informational event, passed
+ * as the third `Session.append` argument for non-surface event types. The
+ * stored envelope carries `ignorable: true` ({@link SessionEvent.ignorable}),
+ * so a reader that does not recognize `type` skips the record instead of
+ * refusing the log. Reserved for types outside the repository vocabulary:
+ * first-party types are known to every reader, and surface types are
+ * model-visible, so `Session.append` refuses the marker for both.
+ */
+export type ExternalEventIntent = {
+  /** Required `true`; absent means the event is required-on-read. */
+  ignorable: true
+}
+
+/**
  * One immutable entry in the session log.
  *
  * A proper discriminated union over `type` (not independent `type`/`data`

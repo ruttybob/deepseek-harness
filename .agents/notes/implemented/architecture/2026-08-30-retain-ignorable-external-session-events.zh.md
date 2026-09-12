@@ -12,7 +12,7 @@ Status: implemented
 
 ## 决定
 
-标准 `SessionEvent` 信封保留 `ignorable?: true`，每种表示都保留它：seed 校验、JSONL、API 传输、生成目录与测试 fixture。持久化 seam 的已存事件校验（`validateStoredEvents`）继续拒绝未知事件，除非已存信封显式带有 `ignorable: true`；字段不存在时仍表示读取必需。
+标准 `SessionEvent` 信封保留 `ignorable?: true`，每种表示都保留它：seed 校验、JSONL、API 传输、生成目录与测试 fixture。持久化 seam 的已存事件校验（`validateStoredEvents`）继续拒绝未知事件，除非已存信封显式带有 `ignorable: true`；字段不存在时仍表示读取必需。`Session.append` 拥有写入侧：非 surface 调用可以传入携带 `ignorable: true` 的 `ExternalEventIntent`，而 append 会拒绝仓库词汇已知的任何类型（surface 类型总是已知）使用该标记，因此第一方事件无法携带它。
 
 只有替代机制在事件生产、持久化、重新加载与传输中都支持当前第三方插件，并为已包含该标记的会话提供显式切换方案后，才能删除此字段。[Session log 版本决策](2026-08-10-session-log-version-mechanism.zh.md)继续定义默认读取必需的安全规则与格式版本策略。
 
@@ -30,4 +30,4 @@ Alpha 实现中的历史格式迁移有意更严格。v0-to-v1 迁移边会拒�
 
 ## 影响
 
-第三方信息性事件的已存记录带有显式标记时可以继续重新加载，未知必需事件则仍会明确失败。在替代机制满足切换条件前，该字段继续属于公开事件信封、JSONL 表示、传输类型、生成引用及其测试。
+第三方信息性事件的已存记录带有显式标记时可以继续重新加载，仓库外写入方通过 `Session.append` 的 `ExternalEventIntent` seam 存储该标记，未知必需事件则仍会明确失败。在替代机制满足切换条件前，该字段继续属于公开事件信封、JSONL 表示、传输类型、生成引用及其测试。
