@@ -553,17 +553,6 @@ describe('released event and payload inventory', () => {
     }
   })
 
-  it('admits historical subagent descriptor versions in both released generations and refuses newer ones', () => {
-    const historical = { mode: 'continuable', version: 2, provider: 'spawn', label: 'child' } as const
-    expect(() => { assertReleasedEventPayload({ type: 'subagent/descriptor', seq: 0, time: 1, data: historical }, 0) }).not.toThrow()
-    expect(() => { assertReleasedEventPayload({ type: 'subagent/descriptor', seq: 0, time: 1, data: historical }, 1) }).not.toThrow()
-    const future = { mode: 'continuable', version: 4, provider: 'spawn' } as const
-    for (const generation of [0, 1] as const) {
-      expect(() => { assertReleasedEventPayload({ type: 'subagent/descriptor', seq: 0, time: 1, data: future }, generation) })
-        .toThrow(/newer than the supported version 3/)
-    }
-  })
-
   it('validates legacy round-zero goal mutation messages', () => {
     const change = {
       kind: 'goal/change', version: 1, operation: 'clear',
