@@ -12,7 +12,7 @@ const AGENT = {
   binScript: fileURLToPath(new URL('../../../../src/bin.ts', import.meta.url)),
   configPath: fileURLToPath(new URL('../../../../../../snapshots/acp/escalation-approved/cordis.yml', import.meta.url)),
   profile: 'acp',
-  tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url)),
+  tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url)),
 }
 const IMAGE_OFFLOAD_CONFIG = fileURLToPath(new URL('./fixtures/image-offload.cordis.yml', import.meta.url))
 const SNAPSHOTS_DIR = fileURLToPath(new URL('../../../../../../snapshots/acp/', import.meta.url))

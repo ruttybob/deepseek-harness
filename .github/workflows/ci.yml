@@ -442,6 +442,12 @@ jobs:
       - name: Prepare bubblewrap (unrestrict userns)
         run: bash scripts/prepare-ci-bubblewrap.sh
 
+      # The source-launch smoke resolves bare imports through package exports
+      # (tsconfig.runtime.json strips the source paths facade), so the runtime
+      # needs built lib output the same way the published bin does.
+      - name: Build runtime artifacts
+        run: pnpm run build
+
       - name: Run compatibility smokes
         env:
           DSH_BUILD_CLIENT_PROFILE: official

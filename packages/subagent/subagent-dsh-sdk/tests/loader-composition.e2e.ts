@@ -21,7 +21,7 @@ const driver = fileURLToPath(new URL('driver.ts', fixtureDir))
 const configPath = fileURLToPath(new URL('dsh-sdk.patch.yml', fixtureDir))
 const childConfigPath = fileURLToPath(new URL('child.patch.yml', fixtureDir))
 const childMockPath = fileURLToPath(new URL('child-mock-llm.ts', fixtureDir))
-const repoTsconfig = fileURLToPath(new URL('../../../../tsconfig.json', import.meta.url))
+const repoTsconfig = fileURLToPath(new URL('../../../../tsconfig.runtime.json', import.meta.url))
 
 async function jsonlFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true })

@@ -323,7 +323,7 @@ function ciPrimaryGates(): Gate[] {
     lintGate({ needs: ['typert-contracts'] }),
     pnpmScript('duplication', 'duplication'),
     ...coverageGates(),
-    ...nodeCompatSmokeGates(),
+    ...nodeCompatSmokeGates({ builtRuntime: ['build'] }),
     snapshotGate(),
     ...docSyncLeafGates({
       docTypecheckNeeds: ['typert-contracts'],
@@ -364,7 +364,7 @@ function nodeCompatGates(): Gate[] {
   ]
 }
 
-function nodeCompatSmokeGates(options: { cliSmoke?: boolean } = {}): Gate[] {
+function nodeCompatSmokeGates(options: { cliSmoke?: boolean; builtRuntime?: string[] } = {}): Gate[] {
   const gates: Gate[] = [
     pnpmExec('source-worker-smoke', [
       'vitest',
@@ -380,7 +380,10 @@ function nodeCompatSmokeGates(options: { cliSmoke?: boolean } = {}): Gate[] {
       'vitest',
       'run',
       'apps/cli/tests/source-launch.compat.spec.ts',
-    ], { label: 'dsh source-launch smoke' }),
+    ], {
+      label: 'dsh source-launch smoke',
+      ...options.builtRuntime === undefined ? {} : { needs: options.builtRuntime },
+    }),
     pnpmExec('vitest-jsdom-smoke', [
       'vitest',
       'run',
@@ -471,6 +474,9 @@ function ciConsumerGates(): Gate[] {
     pnpmScript('node-compat', 'check:node-compat', {
       label: 'Node compatibility',
       env: { [CLIENT_BUILD_PROFILE_SELECTOR]: 'official' },
+      // The source-launch smoke launches the source entry through the runtime
+      // tsconfig, so its bare imports need the built `lib/` tree.
+      needs: builtTree,
     }),
     pnpmScript('publint', 'publint', { needs: builtTree }),
     builtPackageInvariantsGate(builtTree),

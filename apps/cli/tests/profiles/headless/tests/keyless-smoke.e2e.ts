@@ -11,7 +11,7 @@ const PRODUCTION_PROFILE_PROCESS_TIMEOUT_MS = 60_000
 const PRODUCTION_PROFILE_TEST_TIMEOUT_MS = PRODUCTION_PROFILE_PROCESS_TIMEOUT_MS + 15_000
 const binScript = fileURLToPath(new URL('../../../../../../packages/test-support/loader-smoke/tests/fixtures/headless-driver.ts', import.meta.url))
 const configPath = fileURLToPath(new URL('./fixtures/cli.patch.yml', import.meta.url))
-const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url))
+const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url))
 
 describe('headless-agent keyless smoke', () => {
   it('boots the real Loader tree, runs the production shell tool, and persists the turn', async () => {

@@ -84,7 +84,7 @@ defineAcpSnapshotSuite({
     binScript: fileURLToPath(new URL('../../apps/cli/src/bin.ts', import.meta.url)),
     configPath: fileURLToPath(new URL('./escalation-approved/cordis.yml', import.meta.url)),
     profile: 'acp',
-    tsconfigPath: fileURLToPath(new URL('../../tsconfig.json', import.meta.url)),
+    tsconfigPath: fileURLToPath(new URL('../../tsconfig.runtime.json', import.meta.url)),
   },
   snapshotsDir: corpusDir,
   scenarios,

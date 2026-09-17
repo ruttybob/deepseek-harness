@@ -36,7 +36,7 @@ const sessionExpected = join(fixtureDir, 'session.expected.jsonl')
 const precedenceExpected = join(dirname(fixtureDir), 'precedence-change/session.expected.jsonl')
 const configPath = fileURLToPath(new URL('../workspace-context-resume-snapshot.patch.yml', import.meta.url))
 const binScript = fileURLToPath(new URL('../../../../../../packages/test-support/loader-smoke/tests/fixtures/headless-driver.ts', import.meta.url))
-const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url))
+const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url))
 const sessionId = SessionId('workspace-context-resume')
 const refreshing = process.env.DSH_SNAPSHOT === 'refresh'
 const oldInstruction = 'Old workspace instruction.'

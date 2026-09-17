@@ -25,7 +25,7 @@ const AGENT: AgentUnderTest = {
   binScript: fileURLToPath(new URL('../../../../src/bin.ts', import.meta.url)),
   configPath: fileURLToPath(new URL('../cordis.yml', import.meta.url)),
   profile: 'acp',
-  tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url)),
+  tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url)),
 }
 const DANGER_FULL_ACCESS_ENV = { DSH_PERMISSION_MODE: 'danger-full-access' }
 

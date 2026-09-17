@@ -22,7 +22,7 @@ it('warns when MCP discovery exceeds the SDK page limit and completes the headle
       '--patch', configPath,
       'Complete the task without the failed MCP server.',
     ],
-    tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url)),
+    tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url)),
     env: {
       DSH_MCP_PAGINATION_FIXTURE: fileURLToPath(new URL('pagination-limit-server.ts', fixtureRoot)),
       DSH_PERMISSION_MODE: 'danger-full-access',

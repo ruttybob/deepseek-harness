@@ -60,7 +60,7 @@ function cleanEnvironment(root: string, dshHome: string): NodeJS.ProcessEnv {
     NODE_NO_WARNINGS: '1',
     SSH_CONNECTION: '',
     SSH_TTY: '',
-    TSX_TSCONFIG_PATH: join(REPO_ROOT, 'tsconfig.json'),
+    TSX_TSCONFIG_PATH: join(REPO_ROOT, 'tsconfig.runtime.json'),
   }
 }
 

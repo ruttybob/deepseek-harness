@@ -18,7 +18,7 @@ const agent: AgentUnderTest = {
   libBinScript: join(repoRoot, 'apps/cli/lib/bin.js'),
   configPath: fileURLToPath(new URL('./fixtures/control-surface/cordis.yml', import.meta.url)),
   profile: 'acp',
-  tsconfigPath: join(repoRoot, 'tsconfig.json'),
+  tsconfigPath: join(repoRoot, 'tsconfig.runtime.json'),
 }
 const mcpServer = fileURLToPath(new URL('../../../../../../packages/mcp/mcp-client/tests/fixture-server.ts', import.meta.url))
 

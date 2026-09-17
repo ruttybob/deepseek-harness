@@ -11,7 +11,7 @@ const configPath = fileURLToPath(new URL(
   './fixtures/domain/goal.patch.yml',
   import.meta.url,
 ))
-const repoTsconfig = fileURLToPath(new URL('../../../../tsconfig.json', import.meta.url))
+const repoTsconfig = fileURLToPath(new URL('../../../../tsconfig.runtime.json', import.meta.url))
 
 async function jsonlFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true })

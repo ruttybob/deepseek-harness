@@ -29,7 +29,7 @@ const agent: AgentUnderTest = {
   binScript: fileURLToPath(new URL('../../../../src/bin.ts', import.meta.url)),
   configPath: fileURLToPath(new URL('../../../../../../snapshots/acp/escalation-approved/cordis.yml', import.meta.url)),
   profile: 'acp',
-  tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url)),
+  tsconfigPath: fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url)),
 }
 
 interface JsonObject {

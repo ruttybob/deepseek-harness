@@ -27,7 +27,7 @@ const parentExpected = join(fixtureDir, 'parent.expected.jsonl')
 const childExpected = join(fixtureDir, 'child.expected.jsonl')
 const configPath = fileURLToPath(new URL('../subagent-inheritance-snapshot.patch.yml', import.meta.url))
 const binScript = fileURLToPath(new URL('../../../../../../packages/test-support/loader-smoke/tests/fixtures/headless-driver.ts', import.meta.url))
-const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url))
+const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url))
 const sessionId = SessionId('subagent-inheritance-parent')
 const refreshing = process.env.DSH_SNAPSHOT === 'refresh'
 const task = 'Delegate the write probe to a subagent.'

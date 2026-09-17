@@ -21,7 +21,7 @@ const replayOverride = join(fixtureDir, 'replay.override.json')
 const sessionExpected = join(fixtureDir, 'session.expected.jsonl')
 const configPath = fileURLToPath(new URL('../semantic-checkpoint-snapshot.patch.yml', import.meta.url))
 const binScript = fileURLToPath(new URL('../../../../../../packages/test-support/loader-smoke/tests/fixtures/headless-driver.ts', import.meta.url))
-const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url))
+const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url))
 const sessionId = SessionId('semantic-checkpoint-unknown-outcome')
 const refreshing = process.env.DSH_SNAPSHOT === 'refresh'
 const task = 'Continue safely from the interrupted operation.'

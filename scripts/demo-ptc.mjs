@@ -13,6 +13,13 @@ const child = spawn(process.execPath, [
   task,
 ], {
   stdio: 'inherit',
-  env: { ...process.env, DSH_TOOLS_MODE: 'ptc' },
+  env: {
+    ...process.env,
+    DSH_TOOLS_MODE: 'ptc',
+    // Same resolution facade as the `dsh` script: bare imports must resolve
+    // through package exports, not the source `paths` map, or built bundles
+    // and their source copies load as two module identities.
+    TSX_TSCONFIG_PATH: 'tsconfig.runtime.json',
+  },
 })
 child.on('exit', (code, signal) => { process.exit(signal !== null ? 1 : code ?? 1) })

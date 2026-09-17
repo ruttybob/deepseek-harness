@@ -1,0 +1,22 @@
+{
+  // Resolution facade for the `dsh` runtime launch (`pnpm dsh`, `demo:inspector`):
+  // TSX_TSCONFIG_PATH points here so tsx transpiles the source entry chain while
+  // resolving every bare import through package `exports` — the artifact plane —
+  // exactly like the published bin. Inheriting `tsconfig.base.json` `paths` here
+  // projects workspace imports onto `src/` for imports that originate in built
+  // `lib/` bundles, loading one package twice under two module identities
+  // (e.g. dsh-tools: the `tools` row constructs from `lib`, agent-loop's symbol
+  // import binds to `src`), which breaks symbol-keyed service internals.
+  // Deliberately does NOT extend tsconfig.base.json: the base paths map is the
+  // source-plane facade for gates, tests, and scripts/, not for the runtime.
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "paths": {}
+  }
+}

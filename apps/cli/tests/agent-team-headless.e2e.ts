@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { resolveExampleLaunch } from '@deepseek-ai/dsh-loader-smoke'
 
 const dshBinScript = fileURLToPath(new URL('../src/bin.ts', import.meta.url))
-const tsconfigPath = fileURLToPath(new URL('../../../tsconfig.json', import.meta.url))
+const tsconfigPath = fileURLToPath(new URL('../../../tsconfig.runtime.json', import.meta.url))
 const fixturePlugin = pathToFileURL(fileURLToPath(
   new URL('./profiles/headless/tests/fixtures/team-llm.mjs', import.meta.url),
 )).href
