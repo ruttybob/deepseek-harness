@@ -337,6 +337,23 @@ describe('ui-agent-preset apply', () => {
     expect(calls.length).toBe(afterRelevant)
   })
 
+  it('re-reads the surfaces when a preset lands from outside the chip', async () => {
+    // A preset applied by any picker that is not this chip — the command
+    // palette, the CLI, an API client — lands as a forwarded host event. The
+    // seat labels must re-read the session's composition, or a chip keeps
+    // showing the preset the session had before the external switch.
+    const { ctx, slots, calls, remote } = await bench()
+    ctx.provide('sessions', sessionsDouble(ctx, { byId: {} }) as never)
+    declareRoot(slots)
+    await ctx.plugin({ inject: [...inject], apply }).await()
+    const section = (slots.entries('settings.section')[0]!.inject as unknown as () => AgentPresetSectionInjected)()
+    await section.load()
+    const before = calls.length
+
+    remote.emit('agent-preset/selected', ['session-1', 'minimal'])
+    await vi.waitFor(() => { expect(calls.length).toBe(before + 3) })
+  })
+
   it('re-reads both surfaces when the connection comes back', async () => {
     const { ctx, slots, calls } = await bench()
     declareRoot(slots)

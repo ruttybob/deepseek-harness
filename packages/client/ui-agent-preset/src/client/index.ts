@@ -122,6 +122,13 @@ export function apply(ctx: ClientContext): void {
       ctx.on('connection/reset', () => {
         refresh()
       }),
+      // A preset landed on some session from a picker that is not this chip —
+      // the command palette, the CLI, an API client. Without this reload a
+      // seat keeps showing the composition the session carried before the
+      // external switch, and only catches up on the next unrelated re-render.
+      ctx.remote.$on('agent-preset/selected', () => {
+        refresh()
+      }),
     ]
     return () => { for (const dispose of disposers) dispose() }
   }, 'ui-agent-preset: settings refresh')
