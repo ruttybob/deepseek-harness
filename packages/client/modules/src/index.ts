@@ -675,8 +675,15 @@ export class ClientModuleRegistry extends Service {
     }
 
     const registerWebCarrier = (webCtx: Context): void => {
+      // `get`, not the property proxy: this fiber declares only `loader`, and a
+      // `webServer` provided by a sibling fiber is invisible to proxy access.
+      // `inject(['webServer'])` starts this fiber only once the service is
+      // provided and its fiber is active, so the read below cannot miss.
+      const webServer = webCtx.get('webServer')
+      /* v8 ignore next -- `inject(['webServer'])` starts this fiber only after the service is provided. */
+      if (webServer === undefined) throw new Error('client-modules: webServer missing at bundle-route dispatch')
       webCtx.effect(
-        () => webCtx.webServer.register({ kind: 'prefix', path: '/plugins', handler: this.serveBundle }),
+        () => webServer.register({ kind: 'prefix', path: '/plugins', handler: this.serveBundle }),
         'client-modules: bundle route',
       )
     }
