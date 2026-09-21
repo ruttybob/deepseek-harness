@@ -35,6 +35,7 @@ import type { Entry } from '@deepseek-ai/cordis-plugin-loader'
 import type { IndexInjection } from '@deepseek-ai/dsh-host-webserver'
 import { exactPackageSpecifier, parseDshClient, stripClientSuffix } from './client/manifest.ts'
 import { artifactPredates, newestSourceUnder, type NewestSource } from './artifact-freshness.ts'
+import { clientBundleBuildHint, enclosingWorkspaceRoot } from './build-hint.ts'
 import type { WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph } from './client/manifest.ts'
 
 export { stripClientSuffix } from './client/manifest.ts'
@@ -90,43 +91,59 @@ interface ClientPackageSource extends ResolvedPkgMeta {
   sourceKey: string
 }
 
-/** Recovery instruction shared by grouped startup and steady-state bundle diagnostics. */
-const CLIENT_BUNDLE_BUILD_INSTRUCTION =
-  'run `pnpm run build:lib:client` (full `pnpm run build` on a clean checkout) before launch'
+let runningWorkspaceRootCache: string | undefined
+/**
+ * Workspace root of the running client-modules package, or undefined when it
+ * lives outside any workspace; bundle diagnostics compare package workspaces against it.
+ */
+function runningWorkspaceRoot(): string | undefined {
+  runningWorkspaceRootCache ??= enclosingWorkspaceRoot(dirname(fileURLToPath(import.meta.url)))
+  return runningWorkspaceRootCache
+}
 
 /** Missing built client export, retained as structured data for activation-error grouping. */
 class MissingClientBundleError extends Error {
+  /** Recovery instruction for this bundle's location, embedded in the grouped composition error. */
+  readonly buildHint: string
+
   constructor(
     readonly packageName: string,
     readonly clientPath: string,
     cause: unknown,
   ) {
+    const buildHint = clientBundleBuildHint(clientPath, runningWorkspaceRoot())
     super(
       [
-        `client-modules: client bundle not found; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`,
+        `client-modules: client bundle not found; ${buildHint}:`,
         `  package: ${packageName}`,
         `  path: ${clientPath}`,
       ].join('\n'),
       { cause },
     )
+    this.buildHint = buildHint
   }
 }
 
 /** Client bundle predating its package sources, retained as structured data for activation-error grouping. */
 class StaleClientBundleError extends Error {
+  /** Recovery instruction for this bundle's location, embedded in the grouped composition error. */
+  readonly buildHint: string
+
   constructor(
     readonly packageName: string,
     readonly clientPath: string,
     readonly newestSource: NewestSource,
   ) {
+    const buildHint = clientBundleBuildHint(clientPath, runningWorkspaceRoot())
     super(
       [
-        `client-modules: client bundle older than package sources; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`,
+        `client-modules: client bundle older than package sources; ${buildHint}:`,
         `  package: ${packageName}`,
         `  path: ${clientPath}`,
         `  newest source: ${newestSource.path} at ${new Date(newestSource.mtimeMs).toISOString()}`,
       ].join('\n'),
     )
+    this.buildHint = buildHint
   }
 }
 
@@ -138,19 +155,23 @@ class ClientPackageCompositionError extends AggregateError {
     const packageNoun = failures.length === 1 ? 'package' : 'packages'
     const lines = [`client-modules: ${String(failures.length)} client ${packageNoun} failed to compose:`]
     if (missingBundles.length > 0) {
-      lines.push(`  client bundles not found; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`)
-      for (const error of missingBundles) {
-        lines.push(`    - package: ${error.packageName}`, `      path: ${error.clientPath}`)
+      for (const [hint, group] of groupByBuildHint(missingBundles)) {
+        lines.push(`  client bundles not found; ${hint}:`)
+        for (const error of group) {
+          lines.push(`    - package: ${error.packageName}`, `      path: ${error.clientPath}`)
+        }
       }
     }
     if (staleBundles.length > 0) {
-      lines.push(`  client bundles older than package sources; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`)
-      for (const error of staleBundles) {
-        lines.push(
-          `    - package: ${error.packageName}`,
-          `      path: ${error.clientPath}`,
-          `      newest source: ${error.newestSource.path} at ${new Date(error.newestSource.mtimeMs).toISOString()}`,
-        )
+      for (const [hint, group] of groupByBuildHint(staleBundles)) {
+        lines.push(`  client bundles older than package sources; ${hint}:`)
+        for (const error of group) {
+          lines.push(
+            `    - package: ${error.packageName}`,
+            `      path: ${error.clientPath}`,
+            `      newest source: ${error.newestSource.path} at ${new Date(error.newestSource.mtimeMs).toISOString()}`,
+          )
+        }
       }
     }
     const isActionableBuildError = (error: Error): boolean =>
@@ -161,6 +182,17 @@ class ClientPackageCompositionError extends AggregateError {
     }
     super(failures, lines.join('\n'))
   }
+}
+
+/** Group actionable bundle failures by recovery instruction, preserving first-seen order. */
+function groupByBuildHint<E extends MissingClientBundleError | StaleClientBundleError>(errors: readonly E[]): Map<string, E[]> {
+  const groups = new Map<string, E[]>()
+  for (const error of errors) {
+    const group = groups.get(error.buildHint)
+    if (group === undefined) groups.set(error.buildHint, [error])
+    else group.push(error)
+  }
+  return groups
 }
 
 /** One composed table row: the wire entry plus the resolved package metadata behind it. */

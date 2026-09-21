@@ -479,7 +479,7 @@ describe('client bundle activation', () => {
     const secondPath = writePackage(secondName)
     expect(() => construct([firstName, secondName])).toThrow([
       'client-modules: 2 client packages failed to compose:',
-      '  client bundles not found; run `pnpm run build:lib:client` (full `pnpm run build` on a clean checkout) before launch:',
+      '  client bundles not found; rebuild the package in its own project before launch:',
       `    - package: ${firstName}`,
       `      path: ${firstPath}`,
       `    - package: ${secondName}`,
@@ -492,11 +492,14 @@ describe('client bundle activation', () => {
     const secondName = '@fixture/stale-second'
     const firstPath = writeBuiltPackage(firstName, {})
     const secondPath = writeBuiltPackage(secondName, {})
+    // The fixture root becomes a pnpm workspace of its own, so the harness build
+    // instruction must not appear: these packages rebuild in their own workspace.
+    writeFileSync(join(root!, 'pnpm-workspace.yaml'), 'packages:\n  - node_modules\n')
     const firstSource = writeSourcePostdatingBundle(firstPath, 60_000)
     const secondSource = writeSourcePostdatingBundle(secondPath, 60_000)
     expect(() => construct([firstName, secondName])).toThrow([
       'client-modules: 2 client packages failed to compose:',
-      '  client bundles older than package sources; run `pnpm run build:lib:client` (full `pnpm run build` on a clean checkout) before launch:',
+      `  client bundles older than package sources; rebuild the package in its own workspace: run \`pnpm run build\` at ${root} before launch:`,
       `    - package: ${firstName}`,
       `      path: ${firstPath}`,
       `      newest source: ${firstSource.path} at ${new Date(firstSource.mtimeMs).toISOString()}`,

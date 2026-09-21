@@ -47,7 +47,7 @@ The shell seeds a frozen module table (`PLATFORM_MODULES`: React, Cordis, and st
 
 ### Build requirements
 
-The host serves built client bundles, so `pnpm run build:lib:client` must have produced each `lib/client.js` before launch (full `pnpm run build` covers it on a clean checkout); a missing bundle, or one older than its package sources, fails activation loudly with one build instruction and a package/path list. The staleness comparison runs at activation only, never in the steady-state reconcile, so a dev watcher can finish a rebuild without failing a live session, and a package that ships no source tree is never reported stale. Source launch maps host imports to TypeScript source but still consumes the built client export. The package accepts no plugin config of its own.
+The host serves built client bundles, so each `lib/client.js` must exist and be newer than its package sources at launch; a missing bundle, or one older than its package sources, fails activation loudly with a package/path list and a build instruction scoped to where the package lives — bundles in this workspace point at `pnpm run build:lib:client` (full `pnpm run build` covers it on a clean checkout), while a package mounted from another pnpm workspace is told to run `pnpm run build` at its own workspace root. The staleness comparison runs at activation only, never in the steady-state reconcile, so a dev watcher can finish a rebuild without failing a live session, and a package that ships no source tree is never reported stale. Source launch maps host imports to TypeScript source but still consumes the built client export. The package accepts no plugin config of its own.
 
 -----
 
