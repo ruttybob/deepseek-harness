@@ -6,7 +6,7 @@ import { CodeBlock } from '../src/markdown/CodeBlock.tsx'
 import { MarkdownText } from '../src/markdown/MarkdownText.tsx'
 import { ReadBlock } from '../src/ReadBlock.tsx'
 import { DiffBlock } from '../src/DiffBlock.tsx'
-import { diffBlockLabels, readBlockLabels } from './labels.client.ts'
+import { diffBlockLabels, markdownLabels, readBlockLabels } from './labels.client.ts'
 
 const toolbarLabels = { codeLabel: 'Code block', wrapLabel: 'Wrap lines', unwrapLabel: 'Do not wrap lines' }
 const labels = { copyLabel: 'Copy', copiedLabel: 'Copied', toolbarLabels }
@@ -79,7 +79,7 @@ describe('code-card controls', () => {
   })
 
   it('shows compact Markdown icon actions and preserves custom source controls', () => {
-    const view = render(<MarkdownText text={'```ts\nconst x = 1\n```'} variant="compact" labels={{ code: labels, footnotes: 'Footnotes' }} />)
+    const view = render(<MarkdownText text={'```ts\nconst x = 1\n```'} variant="compact" labels={{ code: labels, diagram: markdownLabels.diagram, footnotes: 'Footnotes' }} />)
     const wrap = screen.getByRole('button', { name: 'Wrap lines' })
     expect(wrap.getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(wrap)
