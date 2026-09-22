@@ -12,10 +12,30 @@ import Hmr from '@deepseek-ai/dsh-hmr'
 import DefaultModel from '@deepseek-ai/dsh-agent-default-model'
 import Settings from '../src/index.ts'
 
-export async function configurationFixture(options: { schema?: z; apply?: (ctx: Context, config: unknown) => void; hmr?: boolean } = {}) {
+export async function configurationFixture(options: { schema?: z; apply?: (ctx: Context, config: unknown) => void; hmr?: boolean; ready?: 'immediate' | 'manual' | 'absent' } = {}) {
   const home = realpathSync(mkdtempSync(join(tmpdir(), 'settings-config-')))
   const dir = join(home, 'profiles', 'test')
   onTestFinished(() => { rmSync(home, { recursive: true, force: true }) })
+  const readyListeners: (() => void)[] = []
+  let readyCommitted = options.ready !== 'manual'
+  const appReady = {
+    onReady: (listener: () => void): (() => void) => {
+      if (readyCommitted) {
+        listener()
+        return () => {}
+      }
+      readyListeners.push(listener)
+      return () => {
+        const pending = readyListeners.indexOf(listener)
+        if (pending >= 0) readyListeners.splice(pending, 1)
+      }
+    },
+  }
+  /** Commit the startup the way a launcher does once its startup audit passed. */
+  const commitReady = (): void => {
+    readyCommitted = true
+    for (const listener of readyListeners.splice(0)) listener()
+  }
   initProfile(dir, ['test-bundle'])
   const bundle = join(dir, 'node_modules', 'test-bundle')
   mkdirSync(bundle, { recursive: true })
@@ -40,7 +60,7 @@ export async function configurationFixture(options: { schema?: z; apply?: (ctx: 
   const start = async (): Promise<Context> => {
     const ctx = await boot('test', join(dir, 'cordis.yml'), readProfilePatches('test', profile), (ctx) => {
       ctx.provide('profileContext', profile)
-      ctx.provide('appReady', { onReady: (listener: () => void) => { listener(); return () => {} } })
+      if (options.ready !== 'absent') ctx.provide('appReady', appReady)
       Object.assign(ctx.loader.builtins, {
         editor: ConfigEditor, settings: Settings, model: DefaultModel, probe: Probe,
       })
@@ -54,5 +74,5 @@ export async function configurationFixture(options: { schema?: z; apply?: (ctx: 
     }
     return ctx
   }
-  return { ctx: await start(), profile, home, start }
+  return { ctx: await start(), profile, home, start, commitReady }
 }

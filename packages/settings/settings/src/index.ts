@@ -232,29 +232,54 @@ export class SettingsForms extends Service {
     const ctx = ownerContext
     ctx.effect(() => () => { this.closed = true })
     ctx.on('app-boot/config-reload', () => { this.invalidate() })
-    void ctx.root.loader.await().then(() => this.importLegacyDocument()).catch((error: unknown) => { ctx.logger.error(error) })
+    void this.importLegacyDocumentAfterStartup().catch((error: unknown) => { ctx.logger.error(error) })
   }
 
-  /** Move the sections of the removed `settings.yaml` into the active profile once the Loader has settled every entry.
-   * The document is renamed before the first write, so a partial import never repeats; a section the running
-   * composition rejects is logged and remains only in the renamed file. */
+  /** Wait for a startup the launcher committed before touching the removed `settings.yaml`.
+   * A startup that fails disposes this service with the composition, and the document must survive it;
+   * a host that provides no readiness signal keeps the Loader-settled timing. */
+  private async importLegacyDocumentAfterStartup(): Promise<void> {
+    const ctx = this.ownerContext
+    const ready = ctx.get('appReady')
+    if (ready === undefined) {
+      await ctx.root.loader.await()
+    } else {
+      const committed = Promise.withResolvers<void>()
+      const cancel = ready.onReady(() => { committed.resolve() })
+      // A startup that never commits disposes this service; settle the wait so the import is not left pending.
+      ctx.effect(() => () => { cancel(); committed.resolve() })
+      await committed.promise
+    }
+    if (this.closed) return
+    await this.importLegacyDocument()
+  }
+
+  /** Move the sections of the removed `settings.yaml` into the active profile after a committed startup.
+   * The document is read before the rename and renamed before the first write, so a partial import never
+   * repeats; a section the running composition rejects is logged and remains only in the renamed file. */
   private async importLegacyDocument(): Promise<void> {
     const profile = this.ownerContext.profileContext
     const path = join(profile.home, 'settings.yaml')
     if (!existsSync(path)) return
+    const sections = parse(await readFile(path, 'utf8')) as Record<string, object> | null
+    // A composition disposed while the document was read imports nothing, so the document must survive it.
+    this.ownerContext.fiber.assertActive()
     const imported = `${path}.imported`
     await rename(path, imported)
-    const sections = parse(await readFile(imported, 'utf8')) as Record<string, object> | null
+    let restored = 0
+    let rejected = 0
     for (const [section, values] of Object.entries(sections ?? {})) {
       const ns = LEGACY_SECTION_ENTRIES[section] ?? section
       try {
         await this.update(ns, values)
+        restored += 1
       } catch (error) {
+        rejected += 1
         this.ownerContext.logger.warn('settings: section %s of %s was not imported into entry %s', section, imported, ns)
         this.ownerContext.logger.warn(error)
       }
     }
-    this.ownerContext.logger.info('settings: imported %s into profile %s', imported, profile.name)
+    this.ownerContext.logger.info('settings: imported %s of %s sections from %s into profile %s', restored, restored + rejected, imported, profile.name)
   }
 
   /** Register the calling plugin instance's page policy without changing its Config.

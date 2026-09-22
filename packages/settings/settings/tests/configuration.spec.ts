@@ -1,10 +1,17 @@
 /** Real profile patch behavior and reference lifetime. */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { setImmediate } from 'node:timers/promises'
 import { expect, it, vi } from 'vitest'
 import { parse } from 'yaml'
 import z from '@deepseek-ai/schemastery'
 import { configurationFixture as fixture } from './configuration-fixture.ts'
+
+/** Let pending filesystem callbacks run without a wall-clock wait. */
+async function settleIo(): Promise<void> {
+  await setImmediate()
+  await setImmediate()
+}
 
 it('persists a model edit, updates the real consumer without remounting, and restores it at restart', async () => {
   const { ctx, profile, start } = await fixture()
@@ -337,6 +344,45 @@ it('imports the removed settings.yaml into the profile once and keeps rejected s
   // The rename fails with EISDIR on POSIX and EPERM on Windows; the reported error names the rename either way.
   await vi.waitFor(() => { expect(failures().some(failure => failure instanceof Error && failure.message.includes('rename'))).toBe(true) })
   expect(blocked.agentDefaultModel.currentSelection().model).toBe('legacy')
+})
+
+it('imports the legacy document only after the launcher commits startup', async () => {
+  const { ctx, home, start, commitReady } = await fixture({ ready: 'manual', hmr: false })
+  const legacy = join(home, 'settings.yaml')
+  writeFileSync(legacy, 'default-model:\n  model: legacy\n')
+  await ctx.fiber.dispose()
+  const next = await start()
+  await settleIo()
+  expect(existsSync(legacy)).toBe(true)
+  expect(existsSync(`${legacy}.imported`)).toBe(false)
+  expect(next.agentDefaultModel.currentSelection().model).toBe('original')
+  commitReady()
+  await vi.waitFor(() => { expect(existsSync(`${legacy}.imported`)).toBe(true) })
+  await vi.waitFor(() => { expect(next.agentDefaultModel.currentSelection().model).toBe('legacy') })
+})
+
+it('leaves the legacy document for the next launch when startup never commits', async () => {
+  const { ctx, home, start, commitReady } = await fixture({ ready: 'manual', hmr: false })
+  const legacy = join(home, 'settings.yaml')
+  writeFileSync(legacy, 'default-model:\n  model: legacy\n')
+  await ctx.fiber.dispose()
+  const next = await start()
+  await next.fiber.dispose()
+  await settleIo()
+  expect(existsSync(legacy)).toBe(true)
+  expect(existsSync(`${legacy}.imported`)).toBe(false)
+  const again = await start()
+  commitReady()
+  await vi.waitFor(() => { expect(again.agentDefaultModel.currentSelection().model).toBe('legacy') })
+})
+
+it('imports the legacy document after Loader settlement in a host without a readiness signal', async () => {
+  const { ctx, home, start } = await fixture({ ready: 'absent', hmr: false })
+  const legacy = join(home, 'settings.yaml')
+  writeFileSync(legacy, 'default-model:\n  model: legacy\n')
+  await ctx.fiber.dispose()
+  const next = await start()
+  await vi.waitFor(() => { expect(next.agentDefaultModel.currentSelection().model).toBe('legacy') })
 })
 
 it('describes an entry whose required field only the profile supplies, and reports a failed refresh instead of crashing', async () => {
