@@ -733,9 +733,6 @@ export class Session {
     const surfaceOpts = opts[0] as SurfaceIntent | undefined
     const ignorable = (opts[0] as ExternalEventIntent | undefined)?.ignorable
     if (ignorable !== undefined) {
-      if (ignorable !== true) {
-        throw new Error(`session event "${type}" carries ignorable ${String(ignorable)}; the marker must be true when present`)
-      }
       if (KNOWN_SESSION_EVENT_TYPES.has(type)) {
         throw new Error(`session event "${type}" cannot be marked ignorable: the repository vocabulary knows this type, so every reader interprets it; the marker is reserved for repository-external informational events`)
       }
