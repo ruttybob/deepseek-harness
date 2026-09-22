@@ -24,8 +24,11 @@ export function MarkdownBody({ content, resourceAddress, useResource, t }: Markd
   const copyLabel = t('code.copy')
   const copiedLabel = t('code.copied')
   const footnotes = t('footnotes')
+  const codeLabel = t('codeBlock.title')
+  const wrapLabel = t('codeBlock.wrap')
+  const unwrapLabel = t('codeBlock.unwrap')
   const labels = useMemo<MarkdownLabels>(() => ({
-    code: { copyLabel, copiedLabel },
+    code: { copyLabel, copiedLabel, toolbarLabels: { codeLabel, wrapLabel, unwrapLabel } },
     diagram: {
       zoomIn: t('markdown.diagram.zoomIn'),
       zoomOut: t('markdown.diagram.zoomOut'),
@@ -34,7 +37,7 @@ export function MarkdownBody({ content, resourceAddress, useResource, t }: Markd
       error: t('markdown.diagram.error'),
     },
     footnotes,
-  }), [copyLabel, copiedLabel, footnotes, t])
+  }), [copyLabel, copiedLabel, footnotes, t, codeLabel, wrapLabel, unwrapLabel])
   if (content.kind !== 'text') return null
   return (
     <div className={css.document} data-document-markdown>

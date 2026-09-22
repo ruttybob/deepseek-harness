@@ -10,7 +10,7 @@ import type { ChatViewSlotProps } from './contract/slots.ts'
  */
 export function markdownLabels(t: ChatViewSlotProps['t']): MarkdownLabels {
   return {
-    code: { copyLabel: t('copy'), copiedLabel: t('copied') },
+    code: { copyLabel: t('copy'), copiedLabel: t('copied'), toolbarLabels: { codeLabel: t('codeBlock.title'), wrapLabel: t('codeBlock.wrap'), unwrapLabel: t('codeBlock.unwrap') } },
     diagram: {
       zoomIn: t('markdown.diagram.zoomIn'),
       zoomOut: t('markdown.diagram.zoomOut'),

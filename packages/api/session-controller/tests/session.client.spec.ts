@@ -14,7 +14,7 @@ import { RemoteStreamCarrierError } from '@deepseek-ai/dsh-api-gateway/client'
 import { RemoteError, type RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import { ok, type RemoteMock } from '@deepseek-ai/dsh-remote-mock'
 import { createClientTest, type TestClient, webApp } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
-import { JUMP_PAGE_MESSAGES, Session } from '../src/client/sessions/session.ts'
+import { Session } from '../src/client/sessions/session.ts'
 import { ClientAssistantStream } from '../src/client/sessions/assistant-stream.ts'
 import { SessionEventStream } from '../src/client/transport.ts'
 import type { SessionFollowRequest, SessionPage, SessionPageRequest } from '../src/types.ts'
@@ -280,9 +280,9 @@ describe('paging', () => {
     await session.open()
     await session.loadOlder()
     const snapshot = session.getSnapshot()
-    expect(mock.log.requests(FOLLOW)).toHaveLength(1)
-    expect(mock.log.requests(PAGE)).toMatchObject([
-      { address: ADDRESS, throughSeq: 11, beforeSeq: 6 },
+    expect(mock.log.requests(FOLLOW)).toMatchObject([{ maxMessages: 500, turnWindow: { minMessages: 50, minTurns: 2 } }])
+    expect(mock.log.requests(PAGE)).toEqual([
+      { address: ADDRESS, throughSeq: 11, beforeSeq: 6, maxMessages: 500, turnWindow: { minMessages: 50, minTurns: 2 } },
     ])
     expect(snapshot.hasMore).toBe(false)
     expect(eventSeqs(session)).toEqual([...older, ...newer].map(event => event.seq))
@@ -343,8 +343,8 @@ describe('paging', () => {
     expect(snapshot.loadingOlder).toBe(false)
     expect(eventSeqs(session)).toEqual([...oldest, ...middle, ...newest].map(event => event.seq))
     expect(mock.log.requests(PAGE)).toMatchObject([
-      { beforeSeq: 12, maxMessages: JUMP_PAGE_MESSAGES },
-      { beforeSeq: 6, maxMessages: JUMP_PAGE_MESSAGES },
+      { beforeSeq: 12, maxMessages: 500, turnWindow: { minMessages: 200, minTurns: 2 } },
+      { beforeSeq: 6, maxMessages: 500, turnWindow: { minMessages: 200, minTurns: 2 } },
     ])
   })
 
@@ -573,7 +573,7 @@ describe('prompt and cancel errors', () => {
     expect(steered).toEqual({ ok: true, value: { accepted: true } })
     expect(cancelled).toEqual({ ok: true, value: { accepted: true } })
     expect(mock.log.requests(FOLLOW)).toEqual([
-      { address: { kind: 'subagent', ...CHILD }, assistantStream: true, maxMessages: 50 },
+      { address: { kind: 'subagent', ...CHILD }, assistantStream: true, maxMessages: 500, turnWindow: { minMessages: 50, minTurns: 2 } },
     ])
     expect(mock.log.requests(PAGE)).toEqual([])
     // The prompt mode crosses the wire as the request's delivery.
@@ -669,7 +669,7 @@ describe('prompt and cancel errors', () => {
     expect(mock.log.requests('subagents/prompt')).toMatchObject([CHILD])
     expect(mock.log.calls('subagents/interruptByParent').map(call => call.args)).toEqual([[SID, PARENT, 'continuable']])
     expect(mock.log.requests(FOLLOW)).toEqual([
-      { address: { kind: 'subagent', ...CHILD, mode: 'one-shot' }, assistantStream: true, maxMessages: 50 },
+      { address: { kind: 'subagent', ...CHILD, mode: 'one-shot' }, assistantStream: true, maxMessages: 500, turnWindow: { minMessages: 50, minTurns: 2 } },
     ])
     expect(mock.log.requests(PAGE)).toEqual([])
     expect(mock.log.requests('session/cancel')).toEqual([])
