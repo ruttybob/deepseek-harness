@@ -21,7 +21,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useSta
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import clsx from 'clsx'
 import { writeClipboard } from '../clipboard.ts'
-import { IconCloseOutline16, IconFullscreenOutline16, IconMinusOutline16, IconPlusOutline16, IconWarningOutline16 } from '../icons/index.tsx'
+import { IconCloseOutlineRegular, IconFullscreenOutlineRegular, IconMinusOutlineRegular, IconPlusOutlineRegular, IconWarningOutlineRegular } from '../icons/index.tsx'
 import { CodeBlock } from './CodeBlock.tsx'
 import { Modal } from '../Modal.tsx'
 import { renderMermaidSvg } from './mermaid.ts'
@@ -272,7 +272,7 @@ export function DiagramFence({ code, labels }: DiagramFenceProps) {
             <div className={cssCode.infostring}>{FENCE_LANGUAGE}</div>
             <div className={cssCode.action}>
               <span className={css.pill} title={errorMessage}>
-                <IconWarningOutline16 size={14} />
+                <IconWarningOutlineRegular size={14} />
                 {labels.diagram.error}
               </span>
               <button type="button" className={cssCode.copyButton} onClick={onCopy}>
@@ -302,7 +302,7 @@ export function DiagramFence({ code, labels }: DiagramFenceProps) {
               aria-label={labels.diagram.zoomOut}
               onClick={() => { inlineStageRef.current?.zoomBy(1 / ZOOM_STEP) }}
             >
-              <IconMinusOutline16 size={14} />
+              <IconMinusOutlineRegular size={14} />
             </button>
             <button
               type="button"
@@ -310,7 +310,7 @@ export function DiagramFence({ code, labels }: DiagramFenceProps) {
               aria-label={labels.diagram.zoomIn}
               onClick={() => { inlineStageRef.current?.zoomBy(ZOOM_STEP) }}
             >
-              <IconPlusOutline16 size={14} />
+              <IconPlusOutlineRegular size={14} />
             </button>
             <button
               type="button"
@@ -318,7 +318,7 @@ export function DiagramFence({ code, labels }: DiagramFenceProps) {
               aria-label={labels.diagram.expand}
               onClick={() => { setModalOpen(true) }}
             >
-              <IconFullscreenOutline16 size={14} />
+              <IconFullscreenOutlineRegular size={14} />
             </button>
             <button type="button" className={cssCode.copyButton} onClick={onCopy}>
               {copied ? labels.code.copiedLabel : labels.code.copyLabel}
@@ -341,7 +341,7 @@ export function DiagramFence({ code, labels }: DiagramFenceProps) {
             aria-label={labels.diagram.close}
             onClick={() => { setModalOpen(false) }}
           >
-            <IconCloseOutline16 size={14} />
+            <IconCloseOutlineRegular size={14} />
           </button>
           <DiagramStage code={code} svg={svg} />
         </div>
