@@ -731,8 +731,13 @@ export class Session {
     // ExternalEventIntent whose surface members are all absent, so the probes below
     // produce the same empty spreads as before.
     const surfaceOpts = opts[0] as SurfaceIntent | undefined
-    const ignorable = (opts[0] as ExternalEventIntent | undefined)?.ignorable
+    // Read the marker as an unknown value: the intent type is narrowed for TypeScript callers, and a dropped marker would
+    // leave a repository-external event no reader can interpret later.
+    const ignorable: unknown = (opts[0] as ExternalEventIntent | undefined)?.ignorable
     if (ignorable !== undefined) {
+      if (ignorable !== true) {
+        throw new Error(`session event "${type}" carries ignorable ${JSON.stringify(ignorable)}; the marker must be true when present`)
+      }
       if (KNOWN_SESSION_EVENT_TYPES.has(type)) {
         throw new Error(`session event "${type}" cannot be marked ignorable: the repository vocabulary knows this type, so every reader interprets it; the marker is reserved for repository-external informational events`)
       }
