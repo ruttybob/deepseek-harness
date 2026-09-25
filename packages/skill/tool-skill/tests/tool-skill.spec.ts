@@ -994,6 +994,71 @@ describe('dsh-tool-skill', () => {
   })
 })
 
+describe('fork: allowUserInvocable loader gate', () => {
+  async function writePolicySkillDir(root: string, name: string, policy: string, body: string): Promise<void> {
+    const dir = join(root, name)
+    await mkdir(dir, { recursive: true })
+    const policyLines = policy === '' ? '' : `${policy}\n`
+    await writeFile(join(dir, 'SKILL.md'), `---\nname: ${name}\ndescription: ${name} demo\n${policyLines}---\n\n${body}\n`)
+  }
+
+  async function gateHarness(allowUserInvocable: boolean): Promise<{ ctx: Context; agent: Agent }> {
+    const home = await tempDir('fork-gate')
+    const skillsRoot = join(home, '.dsh', 'skills')
+    await writePolicySkillDir(skillsRoot, 'hidden-skill', 'disable-model-invocation: true', 'Say the magic word: PINEAPPLE.')
+    await writePolicySkillDir(skillsRoot, 'sealed-skill', 'disable-model-invocation: true\nuser-invocable: false', 'Sealed instructions.')
+    const ctx = await setup(home, allowUserInvocable ? { allowUserInvocable: true } : {})
+    return { ctx, agent: agentForCwd(home) }
+  }
+
+  it('loads a disable-model-invocation skill when allowUserInvocable is set', async () => {
+    const { ctx, agent } = await gateHarness(true)
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('f1'),
+      name: 'skill',
+      arguments: { name: 'hidden-skill' },
+      agent,
+    })
+    expect(result.isError).toBe(false)
+    const block = result.content[0]
+    if (block?.type !== 'text') throw new Error('expected text tool result')
+    expect(block.text).toContain('Say the magic word: PINEAPPLE.')
+  })
+
+  it('keeps rejecting the same skill without the flag (default off)', async () => {
+    const { ctx, agent } = await gateHarness(false)
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('f2'),
+      name: 'skill',
+      arguments: { name: 'hidden-skill' },
+      agent,
+    })
+    expect(result.isError).toBe(true)
+    const block = result.content[0]
+    if (block?.type !== 'text') throw new Error('expected text tool result')
+    expect(block.text).toContain('is not available for model invocation')
+    expect(block.text).not.toContain('PINEAPPLE')
+  })
+
+  it('still rejects skills disabled for both channels, with the flag on', async () => {
+    const { ctx, agent } = await gateHarness(true)
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('f3'),
+      name: 'skill',
+      arguments: { name: 'sealed-skill' },
+      agent,
+    })
+    expect(result.isError).toBe(true)
+    const block = result.content[0]
+    if (block?.type !== 'text') throw new Error('expected text tool result')
+    expect(block.text).toContain('is not available for model invocation')
+    expect(block.text).not.toContain('Sealed instructions.')
+  })
+})
+
 describe('user-explicit invocation injection', () => {
   async function writePolicySkill(root: string, name: string, description: string, policy: string, body: string): Promise<void> {
     const dir = join(root, name)
