@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-当模型应该通过工具运行一支团队时，在 `@deepseek-ai/dsh-experimental-agent-team` 之上挂载本包。挂载后，每个团队成员——Lead 与每个 teammate——都会获得相同的九个工具，以及相同的协作策略。`spawn_teammate` 在初始任务前加上 teammate 的角色和名字。
+当模型应该通过工具运行一支团队时，在 `@deepseek-ai/dsh-experimental-agent-team` 之上挂载本包。挂载后，每个团队成员——Lead 与每个 teammate——都会获得相同的九个工具，以及相同的协作策略。`spawn_teammate` 在初始任务前加上 teammate 的角色和名字。安装按平面（plane）划分：挂载的副本只向加入其自身 preset 挂载的 agent 安装工具，因此一个 profile 中的多个 Agent preset 可以各自携带自己的团队栈，而不会共享成员或在 scoped 注册上冲突。
 
 ### 何时选择
 

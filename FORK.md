@@ -40,7 +40,25 @@ fresh clone is made, re-enable it — it is local config, not committed.
 
 ## Fork-local behavior patches
 
-### tool-skill: `allowUserInvocable` loader gate (37def6e634)
+### agent-team: plane-scoped roster admission (this branch; find it with `git log --grep "plane-scoped"`)
+
+`packages/experimental/agent-team` — `Roster.tryMembership` resolves roles
+only for agents joined to the realm's own plane (same standing preset scope;
+host plane when unscoped). Without it, a second preset-mounted
+`tool-agent-team` claims another mount's Lead, installs a duplicate
+`team:policy` section into the same Agent scope, and the second preset mount
+dies with `agent-preset/invalid`. Several Agent presets can now each carry
+their own `team-realm` group in one profile.
+
+- Tests: `./node_modules/.bin/vitest run packages/experimental/tool-agent-team`
+  (the `keeps each preset plane from claiming another plane's lead` spec
+  reproduces the collision against the pre-fix code).
+- Watch on merge: upstream changes to `tryMembership`'s implicit-lead
+  fallback or to the preset standing-scope binding.
+- Upstreamable as a PR if desired; the draft discussion lives at
+  `/tmp/upstream-discussion-preset-plugin-instances.md`.
+
+### tool-skill: `allowUserInvocable` loader gate ("feat(tool-skill): fork — allowUserInvocable loader gate for non-advertised skills")
 
 `packages/skill/tool-skill` — an `allowUserInvocable` config (default
 `false`). When set, the `skill` tool loads user-invocable skills the
