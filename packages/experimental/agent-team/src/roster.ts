@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import { brandString } from '@deepseek-ai/dsh-brand'
+import { scopeOf, scopeParentOf } from '@deepseek-ai/dsh-scope'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { MessageId } from '@deepseek-ai/dsh-llm'
 import type { SessionId } from '@deepseek-ai/dsh-session'
@@ -86,10 +87,19 @@ export class TeamRoster {
 
   /**
    * Resolve a caller without throwing for scoped installation and lifecycle observers.
+   *
+   * Admission is plane-scoped: every realm shares the process-wide agent
+   * registry, so the implicit-lead fallback below answers only for agents
+   * joined to this realm's own plane — the same standing preset scope, or no
+   * preset at all for the host-plane carrier. Without the comparison, a second
+   * live team preset's realm claims another mount's lead and both realms
+   * install competing Team tooling into one Agent scope.
    * @param agent - candidate exact live Agent.
    * @returns Team membership, or undefined for non-Team subagents and stale identities.
    */
   tryMembership(agent: Agent): TeamMembership | undefined {
+    const agentKey = scopeOf(agent.ctx)
+    if (agentKey === undefined || scopeParentOf(agentKey) !== scopeOf(this.ctx)) return undefined
     if (this.ctx.agents.get(agent.id) !== agent) return undefined
     try {
       const parentId = agent.session.header.parentSession
