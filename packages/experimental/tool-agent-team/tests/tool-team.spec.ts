@@ -7,7 +7,7 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
 import { ToolCallId, createUserMessage } from '@deepseek-ai/dsh-llm'
-import { scopeOf } from '@deepseek-ai/dsh-scope'
+import { bindScopeParent, createScope, scopeOf } from '@deepseek-ai/dsh-scope'
 import { SessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
 import JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import SessionQueryEngine from '@deepseek-ai/dsh-session-query'
@@ -63,7 +63,7 @@ afterEach(async () => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
 })
 
-async function setup(script: ConstructorParameters<typeof MockAdapter>[0], legacyControl = false) {
+async function setup(script: ConstructorParameters<typeof MockAdapter>[0], legacyControl = false, team = true) {
   const ctx = new Context()
   contexts.add(ctx)
   await mountAgentLoopTestDependencies(ctx)
@@ -76,12 +76,26 @@ async function setup(script: ConstructorParameters<typeof MockAdapter>[0], legac
   if (legacyControl) await ctx.plugin(ToolSubagentControl)
   await ctx.plugin(SubagentSpawn, { providerName: 'spawn' })
   await ctx.plugin(SubagentFork, { providerName: 'fork' })
+  if (!team) return { ctx, lead: undefined as never as Agent, fiber: undefined as never, adapter: undefined as never }
   await ctx.plugin(TeamService)
   const fiber = await ctx.plugin(toolTeam)
   const adapter = new MockAdapter(script)
   ctx.llm.registerAdapter(['mock'], adapter)
   const lead = await ctx.agentLoop.create(SessionId('tool-team-lead'), { provider: 'mock', model: 'mock' })
   return { ctx, lead, fiber, adapter }
+}
+
+/**
+ * One preset-style plane: a standing scope plus an isolated `agentTeams`
+ * realm, the same primitives `agent-preset-registry` composes for a preset
+ * mount. Plugins are mounted in the returned realm context.
+ */
+async function plane(ctx: Context, plugin: (realm: Context) => Promise<void>) {
+  const key = {}
+  const scope = createScope(ctx, key)
+  const realm = scope.ctx.isolate('agentTeams')
+  await plugin(realm)
+  return { key, realm }
 }
 
 function execute(
@@ -655,6 +669,35 @@ describe('dsh-tool-team', () => {
     expect(assembled.tools.filter(schema => TOOL_NAMES.includes(schema.name)).map(schema => schema.name))
       .toEqual(['spawn_teammate'])
     expect(renderContextSnapshot(assembled)).not.toContain('Your Team role is lead')
+  })
+
+  it('keeps each preset plane from claiming another plane\'s lead', async () => {
+    const { ctx } = await setup([], false, false)
+    const join = async (id: string, key: object) => {
+      const agent = await ctx.agentLoop.create(SessionId(`two-plane-${id}`), { provider: 'mock', model: 'mock' })
+      const agentKey = scopeOf(agent.ctx)
+      if (agentKey === undefined) throw new Error('expected Agent scope')
+      bindScopeParent(agentKey, key)
+      return agent
+    }
+
+    const a = await plane(ctx, async (realm) => { await realm.plugin(TeamService) })
+    const leadA = await join('lead-a', a.key)
+    await a.realm.plugin(toolTeam)
+    expect((await assembly(ctx, leadA)).tools.map(schema => schema.name).filter(name => TOOL_NAMES.includes(name)))
+      .toEqual(TOOL_NAMES)
+
+    const b = await plane(ctx, async (realm) => { await realm.plugin(TeamService) })
+    const leadB = await join('lead-b', b.key)
+    await b.realm.plugin(toolTeam)
+    expect((await assembly(ctx, leadB)).tools.map(schema => schema.name).filter(name => TOOL_NAMES.includes(name)))
+      .toEqual(TOOL_NAMES)
+    expect(b.realm.get('agentTeams')!.tryMembership(leadA)).toBeUndefined()
+    const unscoped = { ...leadA, ctx: new Context() } as Agent
+    expect(b.realm.get('agentTeams')!.tryMembership(unscoped)).toBeUndefined()
+    expect(a.realm.get('agentTeams')!.membership(leadA).role).toBe('lead')
+    expect((await assembly(ctx, leadA)).tools.map(schema => schema.name).filter(name => TOOL_NAMES.includes(name)))
+      .toEqual(TOOL_NAMES)
   })
 
   it('resolves direct-apply defaults without Loader schema normalization', async () => {
