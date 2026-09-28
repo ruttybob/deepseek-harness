@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-18-runtime-launch-artifact-resolution.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-18-runtime-launch-artifact-resolution.md
-2026-09-18-runtime-launch-artifact-resolution.md: ec44493239b5db503fc1f42d6d5370b734f1e05e
-2026-09-18-runtime-launch-artifact-resolution.zh.md: 84d94e63a46e4e840345f764f8c6823ccd096a68
+/agent-note-runtime-launch-resolves-bare-imports-on-the-artifact-plane:
+  en: 028907ad553b7309
+  zh: 93213d024c5a4683
+/agent-note-runtime-launch-resolves-bare-imports-on-the-artifact-plane/problem:
+  en: bbee8e64ce48f709
+  zh: d30e1fdf445300df
+/agent-note-runtime-launch-resolves-bare-imports-on-the-artifact-plane/decision:
+  en: 69783eee8b9c3d6d
+  zh: 912bfd679c6895da
+/agent-note-runtime-launch-resolves-bare-imports-on-the-artifact-plane/alternatives-considered:
+  en: 5a339d6e9acd588b
+  zh: 6104915c7c9931a9
+/agent-note-runtime-launch-resolves-bare-imports-on-the-artifact-plane/consequences:
+  en: 38f207bacf22deee
+  zh: 3ebaf9826ac6ea16

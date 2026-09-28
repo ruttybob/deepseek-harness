@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-08-mermaid-diagram-fences.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-08-mermaid-diagram-fences.md
-2026-09-08-mermaid-diagram-fences.md: 973f1dce6a36782814af61b7b75f8c4731218076
-2026-09-08-mermaid-diagram-fences.zh.md: d20d23ec34dbd9d65a79273893994520646a5fdc
+/agent-note-mermaid-diagram-fences-render-in-the-web-ui:
+  en: c7366a857b22eedd
+  zh: 3992c655ce81abbd
+/agent-note-mermaid-diagram-fences-render-in-the-web-ui/problem:
+  en: 5b9b66bfa3cb3207
+  zh: 6534961a9035154a
+/agent-note-mermaid-diagram-fences-render-in-the-web-ui/decision:
+  en: d5b4a8e570c98b08
+  zh: e807c46449c1bbe1
+/agent-note-mermaid-diagram-fences-render-in-the-web-ui/alternatives-considered:
+  en: f809ec03d63c0b9d
+  zh: a13006d04a8d3389
+/agent-note-mermaid-diagram-fences-render-in-the-web-ui/consequences:
+  en: a14f6f4dce22710c
+  zh: a201c1c0131d5e0c
