@@ -1,6 +1,13 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 0001-diagram-fence-trust-model.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/adr/0001-diagram-fence-trust-model.md
-0001-diagram-fence-trust-model.md: de572f24efc33823cf547b373fbd32635115ef17
-0001-diagram-fence-trust-model.zh.md: 565ed7698fc3a8f71810833db3483c3596e5d6a9
+/diagram-fences-render-with-mermaid-securitylevel-strict-the-generated-svg-is-consumed-as-trusted-generator-output:
+  en: bc88538dc8849e1b
+  zh: a7e41bbc4cf8e3a9
+/diagram-fences-render-with-mermaid-securitylevel-strict-the-generated-svg-is-consumed-as-trusted-generator-output/considered-options:
+  en: d1ca6b2a9349bb86
+  zh: 1dc2a8227d7ad069
+/diagram-fences-render-with-mermaid-securitylevel-strict-the-generated-svg-is-consumed-as-trusted-generator-output/consequences:
+  en: 255dca6febfe5656
+  zh: dd11ad445b017440

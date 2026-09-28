@@ -91,8 +91,8 @@ export function apply(ctx: Context, config: Config = {}): void {
   const skillTool = defineTool({
     name: 'skill',
     description: allowUserInvocable
-      ? 'Load the full instructions for an available skill. Call this with the exact skill name from the session skill catalog, or the exact name of a skill this session\'s loaded material references, before acting on a task that names or clearly matches that skill.'
-      : 'Load the full instructions for an available skill. Call this with the exact skill name from the session skill catalog before acting on a task that names or clearly matches that skill.',
+      ? 'Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog, or the exact name of a skill this session\'s loaded material references.'
+      : 'Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog.',
     parameters: {
       name: { type: 'string', required: true, description: 'The exact skill name from the available skills list.' },
     },

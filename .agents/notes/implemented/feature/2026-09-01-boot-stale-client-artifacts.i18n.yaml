@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-01-boot-stale-client-artifacts.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-01-boot-stale-client-artifacts.md
-2026-09-01-boot-stale-client-artifacts.md: e7bfa436cf2c5d37339b399cb851e037f39f6d90
-2026-09-01-boot-stale-client-artifacts.zh.md: 530a4afc1b8be583b3895de0fc8ab556d6340dd0
+/agent-note-boot-time-staleness-detection-for-built-client-artifacts:
+  en: 38a32c5c85644d9d
+  zh: f6c5f3005fef5f94
+/agent-note-boot-time-staleness-detection-for-built-client-artifacts/problem:
+  en: 2c5b8092f91116de
+  zh: c5932d592234ac23
+/agent-note-boot-time-staleness-detection-for-built-client-artifacts/decision:
+  en: 0d5c143c6d317ae5
+  zh: f60cbfce196f4d4a
+/agent-note-boot-time-staleness-detection-for-built-client-artifacts/alternatives-considered:
+  en: 5697a394da7dc036
+  zh: 4b0250548e6c95b1
+/agent-note-boot-time-staleness-detection-for-built-client-artifacts/consequences:
+  en: 1ab903d612a797f1
+  zh: 7887447cf8275515

@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-08-session-open-never-latches-loading.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-08-session-open-never-latches-loading.md
-2026-09-08-session-open-never-latches-loading.md: bebb9da2903a5965e206e5d7f557c828f28d4099
-2026-09-08-session-open-never-latches-loading.zh.md: f1cdd3ef00281aebdf6a8c1bc705b791c5e9b33b
+/agent-note-a-session-opening-can-never-latch-loading-or-die-on-its-baseline:
+  en: bb189ce4e3eb5563
+  zh: cb558dbc890cd04e
+/agent-note-a-session-opening-can-never-latch-loading-or-die-on-its-baseline/problem:
+  en: b7c4ad8ecb64d39e
+  zh: 76c1b8424077a252
+/agent-note-a-session-opening-can-never-latch-loading-or-die-on-its-baseline/decision:
+  en: e8bd2e77e4db6128
+  zh: eaea7d8ed9cba017
+/agent-note-a-session-opening-can-never-latch-loading-or-die-on-its-baseline/alternatives-considered:
+  en: b142b9ab826a5d85
+  zh: 0f29ab564334b355
+/agent-note-a-session-opening-can-never-latch-loading-or-die-on-its-baseline/consequences:
+  en: e97ac4c768aca378
+  zh: 4bf006e75cae272c
