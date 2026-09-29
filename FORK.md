@@ -40,6 +40,32 @@ fresh clone is made, re-enable it — it is local config, not committed.
 
 ## Fork-local behavior patches
 
+The always-current commit inventory is
+`git log --oneline --no-merges master --not upstream/master`. The table
+maps every master behavior patch to the suite ritual step 2 runs.
+
+| Package | Fork patch | Suite after sync |
+|---|---|---|
+| `packages/skill/tool-skill` | `allowUserInvocable` loader gate (37def6e634) | `pnpm vitest run packages/skill/tool-skill` |
+| `packages/settings/settings` | legacy `settings.yaml` import only after a committed startup (f5341262d5) | `pnpm vitest run packages/settings/settings` |
+| `packages/core/session` | ignorable-marker strictness and the ExternalEventIntent seam (7853939b44, 019ce2e38a) | `pnpm vitest run packages/core/session` |
+| `packages/extensions/cordis-host-runner` | shared first-party inspect providers across duplicate tool-cordis mounts (a006003e92) | `pnpm vitest run packages/extensions/cordis-host-runner` |
+| `packages/client/client-modules` + `packages/bundle/web-app` | fresh-bundle guard: activation and serving refuse artifacts older than sources (9d6c21897d, 64a7b73a1d and siblings) | `pnpm vitest run packages/bundle/web-app` |
+| `packages/client/ui-user-questions` | taller plan review card, Cmd/Ctrl+Enter approval (a410922628) | `pnpm vitest run packages/client/ui-user-questions` |
+| `packages/client/ui-primitives`, `ui-agent-preset`, `ui-sidebar-documentpreview` | diagram-label fixtures for the fork DiagramFence feature (ca16f8c996, 6416443fa1, 44c524aaf3); ui-primitives also pins the fork `IconMinusOutline` pair in the icon roster | `pnpm vitest run <each package>` |
+| `vendor/cordis/src/fiber.ts` | `FiberState` is a runtime enum so tsx source launch keeps cross-module value imports working (3dd7024d68) | any source-launch boot, e.g. `pnpm dsh --profile headless "say ok"` |
+
+Watch on merge:
+
+- cordis-host-runner: upstream's `register`/`attachShared` split and the
+  client query deadline — the 0.2.0-rc.2 merge rebuilt the spec as
+  upstream's client-query lifecycle plus the fork's duplicate-policy block.
+- ui-user-questions: upstream's `settle`/`decide` in `PlanReviewPanel`
+  (Remote decisions dismiss the panel) — the fork's keyboard approval keeps
+  the stable-callback shape so the effect can hold the verbs.
+- vendor/cordis: an upstream flip back to `const enum FiberState` re-breaks
+  source launch; re-apply the runtime enum.
+
 ### tool-skill: `allowUserInvocable` loader gate (37def6e634)
 
 `packages/skill/tool-skill` — an `allowUserInvocable` config (default
