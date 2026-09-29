@@ -300,7 +300,7 @@ function provider(id: string, shared?: boolean): HostCordisInspectProviderRegist
 }
 
 function setup(): CordisInspectRegistryService {
-  return new CordisInspectRegistryService(new Context())
+  return new CordisInspectRegistryService(new Context(), 10_000)
 }
 
 describe('CordisInspectRegistryService.register', () => {
