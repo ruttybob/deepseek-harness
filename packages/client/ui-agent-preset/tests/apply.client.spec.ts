@@ -1220,7 +1220,7 @@ describe('ui-agent-preset apply', () => {
 
     // No conversation scope mounted: the face omits the affordance and the
     // section hides its button rather than staging into nowhere.
-    const section = (slots.entries('settings.section')[0]!.inject as unknown as () => AgentPresetSectionInjected)()
+    const section = slots.entries('settings.section')[0]!.inject!()
     expect(section.startCreatorDraft).toBeUndefined()
   })
 })

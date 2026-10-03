@@ -14,7 +14,9 @@ describe('Session.append ignorable marker for repository-external events', () =>
 
   it('refuses a marker that is not exactly true', () => {
     const session = Session.create(SessionId('external-marker-value'))
-    const wrong = { ignorable: false } as unknown as ExternalEventIntent
+    // The hostile marker crosses an external append boundary, so it arrives
+    // through JSON rather than the typed constructor.
+    const wrong: ExternalEventIntent = JSON.parse('{"ignorable":false}')
     expect(() => session.append(externalType, { text: 'note' }, wrong))
       .toThrow('session event "plugin/informational" carries ignorable false; the marker must be true when present')
     expect(session.seq).toBe(0)
