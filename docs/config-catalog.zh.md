@@ -3798,6 +3798,14 @@ export interface Config {
 export interface Config {
   /** Maximum normalized description length rendered in the session catalog; minimum 3. */
   catalogDescriptionMaxLength?: number
+  /**
+   * Fork (ruttybob): let the `skill` tool loader accept user-invocable skills the
+   * catalog does not advertise (`disable-model-invocation`), so sessions can load
+   * them by exact name instead of reading SKILL.md around the tool. The catalog
+   * itself stays filtered; only the loader gate widens. Skills disabled for both
+   * channels (`user-invocable: false`) remain unloadable.
+   */
+  allowUserInvocable?: boolean
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-tool-skill -->
@@ -4129,7 +4137,7 @@ export interface WebRuntimeConfig {
 ## `@deepseek-ai/dsh-web-app`
 
 - `inject`: `webServer`
-- `source`: [`packages/bundle/web-app/src/index.ts:46`](../packages/bundle/web-app/src/index.ts)
+- `source`: [`packages/bundle/web-app/src/index.ts:48`](../packages/bundle/web-app/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: composed deployment settings plus per-invocation command-line values. */
