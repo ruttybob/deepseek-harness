@@ -286,7 +286,7 @@
     },
     {
       "name": "skill",
-      "description": "Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog.",
+      "description": "Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog, or the exact name of a skill this session's loaded material references.",
       "parameters": {
         "type": "object",
         "properties": {

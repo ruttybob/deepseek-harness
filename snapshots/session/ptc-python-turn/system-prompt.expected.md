@@ -542,7 +542,7 @@ class Tools(Protocol):
     async def send_message(self, args: SendMessageArgs) -> SendMessageOutput:
         """Send a message to an agent. A working agent receives it at its next step; an idle agent starts a new turn with it. Returns delivery confirmation, not the agent's answer."""
     async def skill(self, args: SkillArgs) -> SkillOutput:
-        """Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog."""
+        """Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog, or the exact name of a skill this session's loaded material references."""
     async def subagent(self, args: SubagentArgs) -> SubagentOutput:
         """Delegate a self-contained task to a subagent (a separate agent that works in its own context) to offload focused, independent work — research, a scoped implementation, an analysis — so it does not consume this conversation's context. The subagent returns its result, not its intermediate steps. This tool starts an independently managed subagent and immediately returns its id. The runtime notifies you when it finishes. The child reports results with `send_message`; use `send_message` to steer it while running or continue its conversation after it finishes."""
     async def subagent_fork(self, args: SubagentForkArgs) -> SubagentForkOutput:

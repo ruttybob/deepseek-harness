@@ -140,7 +140,7 @@ interface ToolArgsMap {
     /** The message to deliver to the agent. */
     message: string;
   } & Record<string, JsonValue>;
-  /** Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog. */
+  /** Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog, or the exact name of a skill this session's loaded material references. */
   skill: {
     /** The exact skill name from the available skills list. */
     name: string;
