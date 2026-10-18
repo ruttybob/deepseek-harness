@@ -25,6 +25,7 @@
 
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
 import { dirname, isAbsolute, join } from 'node:path'
@@ -34,14 +35,11 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Entry } from '@deepseek-ai/cordis-plugin-loader'
 import type { IndexInjection } from '@deepseek-ai/dsh-host-webserver'
 import { exactPackageSpecifier, parseDshClient, stripClientSuffix } from './client/manifest.ts'
-import { artifactPredates, newestSourceUnder, type NewestSource } from './artifact-freshness.ts'
-import { clientBundleBuildHint, enclosingWorkspaceRoot } from './build-hint.ts'
-import type { WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph } from './client/manifest.ts'
+import type { WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph, WebBootRelease } from './client/manifest.ts'
 
 export { stripClientSuffix } from './client/manifest.ts'
-export { artifactPredates, newestSourceUnder, type NewestSource } from './artifact-freshness.ts'
 export type {
-  BootManifest, BootModuleRow, BootPluginRow, WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph,
+  BootManifest, BootModuleRow, BootPluginRow, WebBootBatch, WebBootBatchPhase, WebBootEntry, WebBootGraph, WebBootRelease,
 } from './client/manifest.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -74,8 +72,6 @@ export interface ClientArtifactBaseline {
 /** Resolved metadata cached for one Loader specifier and owning-tree base URL until restart. */
 interface PkgMeta extends WebBootRowFields {
   clientPath: string
-  /** Absolute package source root the client bundle is built from. */
-  sourceRoot: string
 }
 
 interface ResolvedPkgMeta {
@@ -93,59 +89,24 @@ interface ClientPackageSource extends ResolvedPkgMeta {
   sourceKey: string
 }
 
-let runningWorkspaceRootCache: string | undefined
-/**
- * Workspace root of the running client-modules package, or undefined when it
- * lives outside any workspace; bundle diagnostics compare package workspaces against it.
- */
-function runningWorkspaceRoot(): string | undefined {
-  runningWorkspaceRootCache ??= enclosingWorkspaceRoot(dirname(fileURLToPath(import.meta.url)))
-  return runningWorkspaceRootCache
-}
+/** Recovery instruction shared by grouped startup and steady-state bundle diagnostics. */
+const CLIENT_BUNDLE_BUILD_INSTRUCTION = 'run `pnpm run build` before launch'
 
 /** Missing built client export, retained as structured data for activation-error grouping. */
 class MissingClientBundleError extends Error {
-  /** Recovery instruction for this bundle's location, embedded in the grouped composition error. */
-  readonly buildHint: string
-
   constructor(
     readonly packageName: string,
     readonly clientPath: string,
     cause: unknown,
   ) {
-    const buildHint = clientBundleBuildHint(clientPath, runningWorkspaceRoot())
     super(
       [
-        `client-modules: client bundle not found; ${buildHint}:`,
+        `client-modules: client bundle not found; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`,
         `  package: ${packageName}`,
         `  path: ${clientPath}`,
       ].join('\n'),
       { cause },
     )
-    this.buildHint = buildHint
-  }
-}
-
-/** Client bundle predating its package sources, retained as structured data for activation-error grouping. */
-class StaleClientBundleError extends Error {
-  /** Recovery instruction for this bundle's location, embedded in the grouped composition error. */
-  readonly buildHint: string
-
-  constructor(
-    readonly packageName: string,
-    readonly clientPath: string,
-    readonly newestSource: NewestSource,
-  ) {
-    const buildHint = clientBundleBuildHint(clientPath, runningWorkspaceRoot())
-    super(
-      [
-        `client-modules: client bundle older than package sources; ${buildHint}:`,
-        `  package: ${packageName}`,
-        `  path: ${clientPath}`,
-        `  newest source: ${newestSource.path} at ${new Date(newestSource.mtimeMs).toISOString()}`,
-      ].join('\n'),
-    )
-    this.buildHint = buildHint
   }
 }
 
@@ -153,48 +114,20 @@ class StaleClientBundleError extends Error {
 class ClientPackageCompositionError extends AggregateError {
   constructor(failures: Error[]) {
     const missingBundles = failures.filter((error): error is MissingClientBundleError => error instanceof MissingClientBundleError)
-    const staleBundles = failures.filter((error): error is StaleClientBundleError => error instanceof StaleClientBundleError)
+    const otherFailures = failures.filter(error => !(error instanceof MissingClientBundleError))
     const packageNoun = failures.length === 1 ? 'package' : 'packages'
     const lines = [`client-modules: ${String(failures.length)} client ${packageNoun} failed to compose:`]
     if (missingBundles.length > 0) {
-      for (const [hint, group] of groupByBuildHint(missingBundles)) {
-        lines.push(`  client bundles not found; ${hint}:`)
-        for (const error of group) {
-          lines.push(`    - package: ${error.packageName}`, `      path: ${error.clientPath}`)
-        }
+      lines.push(`  client bundles not found; ${CLIENT_BUNDLE_BUILD_INSTRUCTION}:`)
+      for (const error of missingBundles) {
+        lines.push(`    - package: ${error.packageName}`, `      path: ${error.clientPath}`)
       }
     }
-    if (staleBundles.length > 0) {
-      for (const [hint, group] of groupByBuildHint(staleBundles)) {
-        lines.push(`  client bundles older than package sources; ${hint}:`)
-        for (const error of group) {
-          lines.push(
-            `    - package: ${error.packageName}`,
-            `      path: ${error.clientPath}`,
-            `      newest source: ${error.newestSource.path} at ${new Date(error.newestSource.mtimeMs).toISOString()}`,
-          )
-        }
-      }
-    }
-    const isActionableBuildError = (error: Error): boolean =>
-      error instanceof MissingClientBundleError || error instanceof StaleClientBundleError
-    const otherFailures = failures.filter(error => !isActionableBuildError(error))
     if (otherFailures.length > 0) {
       lines.push('  other failures:', ...otherFailures.map(error => `    - ${error.message}`))
     }
     super(failures, lines.join('\n'))
   }
-}
-
-/** Group actionable bundle failures by recovery instruction, preserving first-seen order. */
-function groupByBuildHint<E extends MissingClientBundleError | StaleClientBundleError>(errors: readonly E[]): Map<string, E[]> {
-  const groups = new Map<string, E[]>()
-  for (const error of errors) {
-    const group = groups.get(error.buildHint)
-    if (group === undefined) groups.set(error.buildHint, [error])
-    else group.push(error)
-  }
-  return groups
 }
 
 /** One composed table row: the wire entry plus the resolved package metadata behind it. */
@@ -448,11 +381,17 @@ function identitySectionMap(source: string, sourceUrl: string): Record<string, u
   }
 }
 
-/** Run one producer in the first requester's microtask, not off-thread, and share its settlement. */
-function lazyBody(produce: () => Buffer): () => Promise<Buffer> {
+/**
+ * Run one producer in the first requester's microtask, not off-thread, and share its settlement. A rejected run is
+ * dropped once it settles, so the next request produces again.
+ */
+function lazyBody(produce: () => Buffer | Promise<Buffer>): () => Promise<Buffer> {
   let result: Promise<Buffer> | undefined
   return () => {
-    result ??= Promise.resolve().then(produce)
+    result ??= Promise.resolve().then(produce).catch((error: unknown) => {
+      result = undefined
+      throw error
+    })
     return result
   }
 }
@@ -664,6 +603,11 @@ window.__ModuleLoader__={
 export class ClientModuleRegistry extends Service {
   static inject = ['loader']
 
+  /**
+   * Host release identity published in every graph: this package's version, which releases share
+   * with the CLI, and the source commit the client build fixes into the built Host artifact.
+   */
+  private readonly release: WebBootRelease
   private readonly table = new Map<string, WebPluginRecord>()
   private readonly sources = new Map<string, ClientPackageSource>()
   // Resolution is entry-local: the same specifier can resolve differently in
@@ -686,6 +630,10 @@ export class ClientModuleRegistry extends Service {
    */
   constructor(ctx: Context) {
     super(ctx, 'clientModules')
+    const { version } = createRequire(import.meta.url)('../package.json') as { version: string }
+    // The client build fixes this read into the built Host artifact.
+    const commit = process.env.DSH_CLIENT_COMMIT_HASH
+    this.release = commit === undefined ? { version } : { version, commit }
     // Subscribe before seeding so a fiber arriving mid-activation lands in the
     // same dirty set (Set idempotence makes the overlap harmless). An entry-less
     // fiber is a child plugin or a manual mount — never a loader row; O(1) drop.
@@ -708,7 +656,6 @@ export class ClientModuleRegistry extends Service {
     this.composed = this.compose()
     const failures: Error[] = []
     this.flush(err => failures.push(err))
-    failures.push(...this.staleBundleFailures())
     if (failures.length > 0) {
       throw new ClientPackageCompositionError(failures)
     }
@@ -874,7 +821,12 @@ export class ClientModuleRegistry extends Service {
     this.batchResponses = batchResponses
     this.responses = responses
     const batches = artifacts.map(artifact => artifact.descriptor)
-    return { rev: shortHash(JSON.stringify({ entries, batches })), entries, batches }
+    return {
+      rev: shortHash(JSON.stringify({ entries, batches })),
+      release: this.release,
+      entries,
+      batches,
+    }
   }
 
   private notifyGraphChanged(): void {
@@ -917,7 +869,6 @@ export class ClientModuleRegistry extends Service {
     }
     const meta: PkgMeta = {
       clientPath: join(dirname(pkgPath), clientRel),
-      sourceRoot: join(dirname(pkgPath), 'src'),
       ...(decl.inject !== undefined ? { inject: decl.inject } : {}),
       external: decl.external ?? [],
       immediately: decl.immediately === true,
@@ -1003,23 +954,6 @@ export class ClientModuleRegistry extends Service {
 
   private sourceKey(loaderName: string, baseUrl: string): string {
     return `${baseUrl}\0${loaderName}`
-  }
-
-  /**
-   * Staleness failures for the packages the activation pass composed.
-   * The check runs only here, never in the steady-state reconcile: a dev
-   * watcher sits between a source write and the rebuilt bundle, and a live
-   * session must keep the last good graph while that window is open.
-   * @returns One error per composed client bundle older than its package sources.
-   */
-  private staleBundleFailures(): Error[] {
-    const failures: Error[] = []
-    for (const [packageName, record] of this.table) {
-      const newest = newestSourceUnder([record.meta.sourceRoot])
-      if (newest === undefined || !artifactPredates(record.baseline.mtimeMs, newest)) continue
-      failures.push(new StaleClientBundleError(packageName, record.baseline.path, newest))
-    }
-    return failures
   }
 
   /** Capture the bundle stats before reading its bytes. */
@@ -1177,7 +1111,9 @@ export class ClientModuleRegistry extends Service {
       const requested = requestUrl.pathname.slice(prefix.length)
       const sourceMap = requested.endsWith('.map')
       const fileName = sourceMap ? requested.slice(0, -'.map'.length) : requested
-      if (!CLIENT_CHUNK.test(fileName)) return undefined
+      // The Node Client entry and its split chunks share this directory but
+      // must never be served as browser factory scripts.
+      if (!CLIENT_CHUNK.test(fileName) || fileName === 'client.node.js' || fileName.startsWith('client.node.')) return undefined
       if (resourceUrl !== chunkUrl(record.entry.id, fileName, record.entry.rev, sourceMap)) return undefined
       return { record, fileName, sourceMap, resourceUrl }
     }
@@ -1192,20 +1128,22 @@ export class ClientModuleRegistry extends Service {
     const clientPath = join(dirname(record.meta.clientPath), fileName)
     if (!existsSync(clientPath)) return undefined
     const sourceMapUrl = chunkMapReference(fileName, record.entry.rev)
-    const resource = (): ComboResource => ({
+    // An on-demand chunk is read asynchronously: a host whose filesystem fetches
+    // lazily requested files on first read can serve it without a blocking read.
+    const resource = async (): Promise<ComboResource> => ({
       id: record.entry.id,
       rev: record.entry.rev,
       clientPath,
       fileName,
-      bundle: readFileSync(clientPath),
+      bundle: await readFile(clientPath),
     })
     const response: LazyResponse = sourceMap
       ? {
-        body: lazyBody(() => buildComboSourceMap([resource()], this.readSourceMap, fileName)),
+        body: lazyBody(async () => buildComboSourceMap([await resource()], this.readSourceMap, fileName)),
         contentType: 'application/json; charset=utf-8',
       }
       : {
-        body: lazyBody(() => buildComboScript([resource()], sourceMapUrl)),
+        body: lazyBody(async () => buildComboScript([await resource()], sourceMapUrl)),
         contentType: 'text/javascript; charset=utf-8',
       }
     this.responses.set(resourceUrl, response)

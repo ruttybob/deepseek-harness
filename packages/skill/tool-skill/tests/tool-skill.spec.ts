@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { provideWorkingDirectoryFixture, unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-testkit'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -15,7 +16,6 @@ import AgentRegistry, { agentEvents, type Agent, type PreStepDecision } from '@d
 import SkillRegistry from '@deepseek-ai/dsh-skill'
 import * as SkillFileSystem from '@deepseek-ai/dsh-skill-filesystem'
 import * as toolSkill from '@deepseek-ai/dsh-tool-skill'
-import { unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-testkit'
 
 declare module '@deepseek-ai/dsh-llm' {
   interface MessageSourceMap {
@@ -53,6 +53,7 @@ async function writeSkill(root: string, name: string, description: string, body:
 
 async function setup(home: string, config: toolSkill.Config = {}): Promise<Context> {
   const ctx = new Context()
+  provideWorkingDirectoryFixture(ctx, home)
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(AgentRegistry)
@@ -188,6 +189,7 @@ async function mintAgentScope(ctx: Context, subject: string | Agent): Promise<{ 
 describe('dsh-tool-skill', () => {
   it('registers the skill tool schema and removes it on dispose', async () => {
     const ctx = new Context()
+    provideWorkingDirectoryFixture(ctx)
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ToolRuntime)
     await ctx.plugin(AgentRegistry)
@@ -789,6 +791,7 @@ describe('dsh-tool-skill', () => {
   it('validates the catalog description cap', async () => {
     const home = await tempDir('tool-invalid-catalog-cap')
     const ctx = new Context()
+    provideWorkingDirectoryFixture(ctx, home)
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ToolRuntime)
     await ctx.plugin(AgentRegistry)
@@ -903,7 +906,7 @@ describe('dsh-tool-skill', () => {
     const home = await tempDir('tool-errors')
     await writeSkill(join(home, '.dsh/skills'), 'hidden-skill', 'Hidden skill', 'Hidden instructions.')
     await writeFile(join(home, '.dsh/skills/hidden-skill/SKILL.md'), '---\nname: hidden-skill\ndescription: Hidden skill\ndisable-model-invocation: true\n---\n\nHidden instructions.\n')
-    const ctx = await setup(home)
+    const ctx = await setup(home, { allowUserInvocable: false })
     ctx.skills.register({
       name: 'model-only-skill',
       description: 'Model-only skill',
@@ -928,7 +931,7 @@ describe('dsh-tool-skill', () => {
 
   it('checks model policy before provider loading and rechecks the loaded definition', async () => {
     const home = await tempDir('tool-policy-before-load')
-    const ctx = await setup(home)
+    const ctx = await setup(home, { allowUserInvocable: false })
     const getCalls: string[] = []
     ctx.skills.registerProvider(() => ({
       name: 'policy-probe',
@@ -994,7 +997,7 @@ describe('dsh-tool-skill', () => {
   })
 })
 
-describe('fork: allowUserInvocable loader gate', () => {
+describe('allowUserInvocable loader gate', () => {
   async function writePolicySkillDir(root: string, name: string, policy: string, body: string): Promise<void> {
     const dir = join(root, name)
     await mkdir(dir, { recursive: true })
@@ -1002,20 +1005,20 @@ describe('fork: allowUserInvocable loader gate', () => {
     await writeFile(join(dir, 'SKILL.md'), `---\nname: ${name}\ndescription: ${name} demo\n${policyLines}---\n\n${body}\n`)
   }
 
-  async function gateHarness(allowUserInvocable: boolean): Promise<{ ctx: Context; agent: Agent }> {
-    const home = await tempDir('fork-gate')
+  async function gateHarness(config: toolSkill.Config): Promise<{ ctx: Context; agent: Agent }> {
+    const home = await tempDir('skill-gate')
     const skillsRoot = join(home, '.dsh', 'skills')
     await writePolicySkillDir(skillsRoot, 'hidden-skill', 'disable-model-invocation: true', 'Say the magic word: PINEAPPLE.')
     await writePolicySkillDir(skillsRoot, 'sealed-skill', 'disable-model-invocation: true\nuser-invocable: false', 'Sealed instructions.')
-    const ctx = await setup(home, allowUserInvocable ? { allowUserInvocable: true } : {})
+    const ctx = await setup(home, config)
     return { ctx, agent: agentForCwd(home) }
   }
 
-  it('loads a disable-model-invocation skill when allowUserInvocable is set', async () => {
-    const { ctx, agent } = await gateHarness(true)
+  it('loads a disable-model-invocation skill by default', async () => {
+    const { ctx, agent } = await gateHarness({})
     const result = await ctx.tools.execute({
       signal: testToolSignal,
-      callId: ToolCallId('f1'),
+      callId: ToolCallId('g1'),
       name: 'skill',
       arguments: { name: 'hidden-skill' },
       agent,
@@ -1026,11 +1029,11 @@ describe('fork: allowUserInvocable loader gate', () => {
     expect(block.text).toContain('Say the magic word: PINEAPPLE.')
   })
 
-  it('keeps rejecting the same skill without the flag (default off)', async () => {
-    const { ctx, agent } = await gateHarness(false)
+  it('rejects the same skill with allowUserInvocable: false', async () => {
+    const { ctx, agent } = await gateHarness({ allowUserInvocable: false })
     const result = await ctx.tools.execute({
       signal: testToolSignal,
-      callId: ToolCallId('f2'),
+      callId: ToolCallId('g2'),
       name: 'skill',
       arguments: { name: 'hidden-skill' },
       agent,
@@ -1042,11 +1045,11 @@ describe('fork: allowUserInvocable loader gate', () => {
     expect(block.text).not.toContain('PINEAPPLE')
   })
 
-  it('still rejects skills disabled for both channels, with the flag on', async () => {
-    const { ctx, agent } = await gateHarness(true)
+  it('still rejects skills disabled for both channels', async () => {
+    const { ctx, agent } = await gateHarness({})
     const result = await ctx.tools.execute({
       signal: testToolSignal,
-      callId: ToolCallId('f3'),
+      callId: ToolCallId('g3'),
       name: 'skill',
       arguments: { name: 'sealed-skill' },
       agent,

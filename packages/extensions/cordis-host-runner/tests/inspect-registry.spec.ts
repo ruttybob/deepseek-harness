@@ -1,10 +1,11 @@
 import { Context } from '@deepseek-ai/cordis'
 import type { Fiber } from '@deepseek-ai/cordis'
 import TypertGateway from '@deepseek-ai/dsh-api-gateway'
+import RemoteAccessService from '@deepseek-ai/dsh-api-remote-access'
+import type { PeerId, PeerScope } from '@deepseek-ai/dsh-typert-protocol'
 import TypertRegistry from '@deepseek-ai/dsh-typert-registry'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import DynamicCordisRunnerService from '../src/index.ts'
-import type { HostCordisInspectProviderRegistration } from '../src/index.ts'
 import { CordisInspectRegistryService } from '../src/inspect-registry.ts'
 import type { CordisInspectProviderManifest, CordisInspectQueryRequest, CordisInspectRequestId } from '../src/types.ts'
 import { AGENT_A, AGENT_B } from './helpers.ts'
@@ -78,12 +79,14 @@ function answer(query: ReturnType<typeof start>) {
 
 async function connectGatewayClient(): Promise<AbortController> {
   await ctx.plugin(TypertRegistry)
+  await ctx.plugin(RemoteAccessService)
   await ctx.plugin(TypertGateway)
   ctx.effect(() => ctx.typertGateway.registerRemoteEvents(async function* (signal) {
     await new Promise<void>((resolve) => { signal.addEventListener('abort', () => { resolve() }, { once: true }) })
   }, { home: '/fixture' }))
   const connection = new AbortController()
-  const stream = await ctx.typertGateway.wireStream.open('$events', { args: {} }, (async function* () {})(), undefined, connection.signal)
+  const peer: PeerScope = { id: 'inspect-registry-owner' as PeerId, ctx, principal: { kind: 'owner' }, interactions: 'answer', signal: connection.signal, dispose: () => Promise.resolve() }
+  const stream = await ctx.typertGateway.wireStream.open('$events', { args: {} }, (async function* () {})(), peer, connection.signal)
   const client = stream[Symbol.asyncIterator]()
   ctx.effect(() => async () => {
     connection.abort()
@@ -107,6 +110,7 @@ describe('Client inspect completion', () => {
 
   it('does not dispatch a query when the Gateway has no connected Client', async () => {
     await ctx.plugin(TypertRegistry)
+    await ctx.plugin(RemoteAccessService)
     await ctx.plugin(TypertGateway)
     const query = start()
     expect(requests).toEqual([])
@@ -268,72 +272,5 @@ describe('Client inspect timeout configuration', () => {
 
   it.each([0, -1, 0.5, Infinity, NaN, 2_147_483_648])('rejects invalid timer budget %s', (clientInspectTimeoutMs) => {
     expect(() => DynamicCordisRunnerService.Config({ clientInspectTimeoutMs })).toThrow()
-  })
-})
-
-/**
- * The registry's duplicate policy: a `shared` first-party catalog attaches
- * reference-counted (one host row plus every preset-mounted session of the
- * publishing toolset applies it again into the same process-global registry),
- * while an unmarked duplicate id still fails loudly — two DIFFERENT providers
- * colliding on one id is a composition error, not a share.
- */
-
-const INPUT = { type: 'object', properties: {}, additionalProperties: false } as const
-const OUTPUT = { description: 'test output' } as const
-
-function provider(id: string, shared?: boolean): HostCordisInspectProviderRegistration {
-  return {
-    ...shared === undefined ? {} : { shared },
-    manifest: {
-      id,
-      description: `provider ${id}`,
-      methods: [{
-        name: 'list',
-        description: `list ${id}`,
-        inputSchema: INPUT,
-        outputSchema: OUTPUT,
-      }],
-    },
-    query: async () => ({ ok: true }),
-  }
-}
-
-function setup(): CordisInspectRegistryService {
-  return new CordisInspectRegistryService(new Context(), 10_000)
-}
-
-describe('CordisInspectRegistryService.register', () => {
-  it('attaches a shared registration repeatedly and detaches with the last disposer', () => {
-    const shared = setup()
-    const disposeA = shared.register(provider('Service', true))
-    const disposeB = shared.register(provider('Service', true))
-    expect(shared.list().map(view => view.id)).toEqual(['Service'])
-    disposeA()
-    expect(shared.list().map(view => view.id)).toEqual(['Service'])
-    disposeB()
-    expect(shared.list()).toEqual([])
-  })
-
-  it('treats each shared disposer as single-shot', () => {
-    const shared = setup()
-    const dispose = shared.register(provider('Service', true))
-    dispose()
-    dispose()
-    expect(shared.list()).toEqual([])
-  })
-
-  it('refuses an unmarked duplicate id and a shared-over-plain collision', () => {
-    const shared = setup()
-    shared.register(provider('Mine'))
-    expect(() => shared.register(provider('Mine'))).toThrow('Host Cordis inspect provider "Mine" is already registered')
-    // A shared registration cannot attach to an unmarked one either.
-    expect(() => shared.register(provider('Mine', true))).toThrow('already registered')
-  })
-
-  it('refuses a plain registration over a shared one', () => {
-    const shared = setup()
-    shared.register(provider('Service', true))
-    expect(() => shared.register(provider('Service'))).toThrow('already registered')
   })
 })

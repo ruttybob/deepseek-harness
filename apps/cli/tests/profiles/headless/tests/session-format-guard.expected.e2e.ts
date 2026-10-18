@@ -17,7 +17,7 @@ import {
   type SessionEvent,
   type SessionHeader,
 } from '@deepseek-ai/dsh-session'
-import JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import {
   generationLogFilename,
   generationLogPath,
@@ -29,7 +29,7 @@ const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), 'expected/works
 const replayFixture = join(fixtureDir, 'replay.jsonl')
 const configPath = fileURLToPath(new URL('../workspace-context-resume-snapshot.patch.yml', import.meta.url))
 const binScript = fileURLToPath(new URL('../../../../../../packages/test-support/loader-smoke/tests/fixtures/headless-driver.ts', import.meta.url))
-const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url))
+const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url))
 // The resumed-agent fixture in the shared config resumes exactly this id.
 const sessionId = SessionId('workspace-context-resume')
 const fixtureEnv = {

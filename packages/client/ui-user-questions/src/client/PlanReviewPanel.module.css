@@ -12,12 +12,6 @@
   flex-direction: column;
   width: 100%;
   max-width: var(--dsh-chat-content-width);
-  /* Composer seat sits in a fixed-height conversation column (overflow
-     hidden): cap the card against the viewport and scroll the plan, so the
-     strip and the decision row stay reachable on a long plan. The cap sits
-     high because the plan IS the panel's content — the transcript above
-     collapses before the card shrinks. */
-  max-height: min(72vh, 720px);
   --dsw-elevation-stroke-color: var(--dsw-alias-border-l2);
   border: 0;
   border-radius: var(--dsw-radius-xl);

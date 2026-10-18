@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { removeOwnedStyles } from '../src/client/entry-lifecycle.ts'
+import { readRelease } from '../src/client/manifest.ts'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -525,10 +526,9 @@ describe('require resolution', () => {
     expect(built).toBe(1)
   })
 
-  it('a require that misses the module table is loud and names the seed list', async () => {
+  it('a require that misses the module table is loud', async () => {
     const b = bench([row('a')], { a: req => ({ dep: req('ghost') }) })
     await expect(b.loader.import('a', '', {})).rejects.toThrow('require("ghost") missed the module table')
-    await expect(b.loader.import('a', '', {})).rejects.toThrow('PLATFORM_MODULES in @deepseek-ai/dsh-client-web/src/platform.ts')
   })
 
   it('a require cycle is fatal', async () => {
@@ -693,6 +693,24 @@ describe('boot manifest wire', () => {
   it('requires the batch table', () => {
     expect(() => parseBootManifest({ rev: 'graph', entries: [] }))
       .toThrow('client-modules: boot manifest batches must be an array')
+  })
+
+  it('carries an optional Host release and rejects a malformed one', () => {
+    const wire = { rev: 'graph', entries: [], batches: [] }
+    expect(parseBootManifest(wire)).not.toHaveProperty('release')
+    expect(parseBootManifest({ ...wire, release: { version: '1.0.0' } }).release).toEqual({ version: '1.0.0' })
+    // Members outside the identity are dropped so equality compares only version and commit.
+    expect(parseBootManifest({ ...wire, release: { version: '1.0.0', commit: 'abc1234', label: 'x' } }).release)
+      .toEqual({ version: '1.0.0', commit: 'abc1234' })
+    for (const release of ['1.0.0', null, {}, { version: 1 }, { version: '1.0.0', commit: 7 }]) {
+      expect(() => parseBootManifest({ ...wire, release }))
+        .toThrow('client-modules: boot manifest release must carry a string version and an optional string commit')
+      // Release comparison reads no further than the release and reports an unreadable one as absent.
+      expect(readRelease({ release })).toBeUndefined()
+    }
+    expect(readRelease({ release: { version: '1.0.0', commit: 'abc1234', label: 'x' }, entries: 'another format' }))
+      .toEqual({ version: '1.0.0', commit: 'abc1234' })
+    expect(readRelease(null)).toBeUndefined()
   })
 
   it('rejects malformed batch phases', () => {

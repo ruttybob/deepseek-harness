@@ -163,13 +163,6 @@ function QuestionFlow({ pending, t, useStore, useQuestionCard, actions }: Questi
   const review = pending.review
   const markdownLabels = useMemo(() => ({
     code: { copyLabel: t('copy'), copiedLabel: t('copied'), toolbarLabels: { codeLabel: t('codeBlock.title'), wrapLabel: t('codeBlock.wrap'), unwrapLabel: t('codeBlock.unwrap') } },
-    diagram: {
-      zoomIn: t('markdown.diagram.zoomIn'),
-      zoomOut: t('markdown.diagram.zoomOut'),
-      expand: t('expand'),
-      close: t('close'),
-      error: t('markdown.diagram.error'),
-    },
     footnotes: t('markdown.footnotes'),
   }), [t])
   const initialDrafts = useMemo<QuestionDraftAnswer[]>(() => {
@@ -552,7 +545,13 @@ function QuestionFlow({ pending, t, useStore, useQuestionCard, actions }: Questi
                     placeholder would read as somewhere to type. */}
                 {(review === undefined || draft.custom !== '') && (hasOptions
                   ? (
-                    <div className={clsx(css.customRow, draft.custom !== '' && css.customRowActive)}>
+                    <div
+                      className={clsx(
+                        css.customRow,
+                        draft.custom !== '' && css.customRowActive,
+                        question.multiSelect !== true && draft.selected.length > 0 && css.customRowYielded,
+                      )}
+                    >
                       {question.multiSelect === true
                         ? (
                           <span

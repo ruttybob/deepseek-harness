@@ -9,13 +9,11 @@ import { describe, expect, onTestFinished, vi } from 'vitest'
 import { SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { AttachmentId } from '@deepseek-ai/dsh-attachment'
 import type { SessionId } from '@deepseek-ai/dsh-api-remotes/client'
-import { LlmAttemptId } from '@deepseek-ai/dsh-llm'
 import { RemoteStreamCarrierError } from '@deepseek-ai/dsh-api-gateway/client'
 import { RemoteError, type RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import { ok, type RemoteMock } from '@deepseek-ai/dsh-remote-mock'
 import { createClientTest, type TestClient, webApp } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
 import { Session } from '../src/client/sessions/session.ts'
-import { ClientAssistantStream } from '../src/client/sessions/assistant-stream.ts'
 import { SessionEventStream } from '../src/client/transport.ts'
 import type { SessionFollowRequest, SessionPage, SessionPageRequest } from '../src/types.ts'
 import { entries, ev, historyValue, plainTurn } from './event-script.client.ts'
@@ -120,93 +118,6 @@ describe('Session open', () => {
     await session.open()
     expect(session.getSnapshot().openState).toBe('error')
     expect(session.getSnapshot().openError).toMatchObject({ code: 'gateway/internal', message: 'socket died' })
-  })
-
-  it('lands a local opening fault in openState=error instead of an unhandled rejection', async ({ mock, start }) => {
-    const session = await sessionBench(mock, start, SID)
-    mock.stream(FOLLOW, followScript(history(plainTurn(SessionSeq(0), 0, 'a', 'b'))))
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    // Fault injection at the opening fold: after the baseline degrade there is
-    // no wire-shaped data left that faults the fold, so the defense-in-depth
-    // landing is exercised through its only remaining entry.
-    const fold = vi.spyOn(ClientAssistantStream.prototype, 'replace').mockImplementation(() => {
-      throw new TypeError('fold exploded')
-    })
-    try {
-      await session.open()
-      const snapshot = session.getSnapshot()
-      expect(snapshot.openState).toBe('error')
-      expect(snapshot.openError).toMatchObject({ code: 'gateway/internal', message: 'fold exploded' })
-      expect(errorSpy).toHaveBeenCalledOnce()
-      // The marked failure is re-entrant: the next open() rebuilds the window.
-      fold.mockRestore()
-      await session.open()
-      expect(session.getSnapshot().openState).toBe('open')
-    } finally {
-      fold.mockRestore()
-      errorSpy.mockRestore()
-    }
-  })
-
-  it('rejects a non-positive opening deadline at construction', async ({ start }) => {
-    const client = await start()
-    expect(() => new Session(SID, client.ctx.remote, { openTimeoutMs: 0 })).toThrow(RangeError)
-    expect(() => new Session(SID, client.ctx.remote, { openTimeoutMs: Number.POSITIVE_INFINITY })).toThrow(RangeError)
-  })
-
-  it('ends a hung opening at its deadline in openState=error and stays re-entrant', async ({ mock, start }) => {
-    const session = await sessionBench(mock, start, SID, { openTimeoutMs: 20 })
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-    try {
-      // The opening snapshot never lands (wedged host follow); without the
-      // deadline this await pends forever with openState latched 'loading'.
-      mock.stream(FOLLOW, followScript(() => new Promise(() => {})))
-      await session.open()
-      const snapshot = session.getSnapshot()
-      expect(snapshot.openState).toBe('error')
-      expect(snapshot.openError).toMatchObject({ code: 'gateway/internal' })
-      expect(warnSpy).toHaveBeenCalledOnce()
-      // The settled failure is re-entrant: the next stage visit opens again.
-      mock.stream(FOLLOW, followScript(history(plainTurn(SessionSeq(0), 0, 'a', 'b'))))
-      await session.open()
-      expect(mock.log.requests(FOLLOW)).toHaveLength(2)
-    } finally {
-      warnSpy.mockRestore()
-    }
-  })
-
-  it('opens with durable-only content when the assistant baseline fails expansion', async ({ mock, start }) => {
-    const session = await sessionBench(mock, start, SID)
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    try {
-      // The incident shape: a turn streams while the session opens, so the
-      // snapshot carries an active attempt; one member the page validator
-      // rejects must not fail the opening (it latched 'loading' forever).
-      mock.stream(FOLLOW, async ([request], stream) => {
-        stream.push(followSnapshot(historyValue(plainTurn(SessionSeq(0), 0, 'a', 'b')), request as SessionFollowRequest, undefined, {
-          revision: 1,
-          activeAttempt: {
-            attemptId: LlmAttemptId('session:1'),
-            startedAfterSeq: -1,
-            turn: 1,
-            step: 1,
-            nextIndex: 1,
-            stream: [{
-              type: 'chunk', time: 20,
-              chunk: { type: 'usage', usage: { inputTokens: Number.NaN, outputTokens: 1 } },
-            }],
-          },
-        }))
-      })
-      await session.open()
-      const snapshot = session.getSnapshot()
-      expect(snapshot.openState).toBe('open')
-      expect(snapshot.openError).toBeNull()
-      expect(eventSeqs(session)).toEqual([0, 1, 2, 3, 4, 5])
-      expect(errorSpy).toHaveBeenCalledOnce()
-    } finally {
-      errorSpy.mockRestore()
-    }
   })
 
   it('stitches live frames landing right behind the opening snapshot, dropping the page overlap', async ({ mock, start }) => {
@@ -600,6 +511,19 @@ describe('prompt and cancel errors', () => {
     // A successful interrupt leaves no stop error behind.
     expect(session.getSnapshot().promptError).toBeNull()
     expect(session.getSnapshot().subagent).toEqual({ address: CHILD, parentAvailable: true })
+  })
+
+  it('sends an addressed child continuation under its echo request id and retires a refused echo', async ({ mock, start }) => {
+    const session = await sessionBench(mock, start, SID, { address: CHILD, parentAvailable: true })
+    await session.open()
+    const accepted = session.beginSubmission({ mode: 'queue', text: '继续', attachments: [] })
+    await session.prompt([{ type: 'text', text: '继续' }], 'queue', undefined, accepted.requestId)
+    expect(mock.log.requests('subagents/prompt')).toMatchObject([{ requestId: accepted.requestId, ...CHILD }])
+    expect(session.getSnapshot().pendingSubmissions.map(echo => echo.requestId)).toEqual([accepted.requestId])
+
+    const refused = session.beginSubmission({ mode: 'queue', text: '附件', attachments: [] })
+    await session.prompt([{ type: 'file', receiptId: 'receipt' as never }], 'queue', undefined, refused.requestId)
+    expect(session.getSnapshot().pendingSubmissions.map(echo => echo.requestId)).toEqual([accepted.requestId])
   })
 
   it('forwards continuation image parts to the subagent prompt Remote unstripped', async ({ mock, start }) => {

@@ -2,6 +2,7 @@
 import type { GlobalStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { allowAllAccess } from '@deepseek-ai/dsh-client-test-runtime'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ToolCallId } from '@deepseek-ai/dsh-llm/brand'
 import {
@@ -74,6 +75,7 @@ const chatState: ChatState = {
   nodes: {
     get: () => undefined,
     source: () => emptyNodeSource,
+    bottomSource: () => ({ getSnapshot: () => false, subscribe: () => () => {} }),
     turnDataSource: () => { throw new Error('unused') },
     processSource: () => emptyNodeSource,
     values: () => [],
@@ -122,6 +124,7 @@ const kit: Omit<QuestionComposerProps, 'matched'> = {
   useSessionStatus: selector => selector(attentionState),
   useSessionRetainInfo: () => undefined,
   useWorkspaces: selector => selector(workspaceState),
+  ...allowAllAccess,
   useConversation: selector => selector(conversationState),
   useChat: selector => selector(chatState),
   useTrajectory: selector => selector(trajectoryState),
@@ -284,7 +287,7 @@ describe('PlanReviewPanel', () => {
     render(<QuestionComposer matched={carrier} {...kit} />)
 
     const approve = screen.getByRole('button', { name: zh['plan.approve'] })
-    expect(approve.getAttribute('title')).toBe('Leave plan mode; the plan is carried out from the next step. (Cmd/Ctrl+↵)')
+    expect(approve.getAttribute('title')).toBe('Leave plan mode; the plan is carried out from the next step.')
     fireEvent.click(approve)
     expect(answer).toHaveBeenCalledWith(decision('Approve'))
     expect(document.querySelector('[data-plan-review-key] [data-state="ongoing"]')).not.toBeNull()
@@ -324,62 +327,6 @@ describe('PlanReviewPanel', () => {
     expect(answer).toHaveBeenCalledOnce()
   })
 
-
-  it('approves with Cmd+Enter from outside any text field', () => {
-    const { carrier, answer } = wait()
-    render(<QuestionComposer matched={carrier} {...kit} />)
-
-    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
-    expect(answer).toHaveBeenCalledWith(decision('Approve'))
-  })
-
-  it('approves with the Ctrl variant for non-Mac keyboards', () => {
-    const { carrier, answer } = wait()
-    render(<QuestionComposer matched={carrier} {...kit} />)
-
-    fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true })
-    expect(answer).toHaveBeenCalledWith(decision('Approve'))
-  })
-
-  it('ignores plain and shifted Enter without the accelerator', () => {
-    const { carrier, answer } = wait()
-    render(<QuestionComposer matched={carrier} {...kit} />)
-
-    fireEvent.keyDown(document.body, { key: 'Enter' })
-    fireEvent.keyDown(document.body, { key: 'Enter', shiftKey: true })
-    expect(answer).not.toHaveBeenCalled()
-  })
-
-  it('leaves an accelerated Enter to a text field that owns it', () => {
-    const { carrier, answer } = wait()
-    render(<QuestionComposer matched={carrier} {...kit} />)
-
-    // The composer input keeps its send semantics: a gesture starting inside
-    // a field must reach that field, not the panel.
-    const field = document.createElement('textarea')
-    document.body.appendChild(field)
-    fireEvent.keyDown(field, { key: 'Enter', metaKey: true })
-    expect(answer).not.toHaveBeenCalled()
-  })
-
-  it('ignores a composition-closing accelerated Enter', () => {
-    const { carrier, answer } = wait()
-    render(<QuestionComposer matched={carrier} {...kit} />)
-
-    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true, keyCode: 229 })
-    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true, isComposing: true })
-    expect(answer).not.toHaveBeenCalled()
-  })
-
-  it('answers once while a decision is in flight', () => {
-    const { carrier, answer } = wait()
-    render(<QuestionComposer matched={carrier} {...kit} />)
-
-    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
-    // Busy removes the listener: the repeat (or a held key) cannot re-answer.
-    fireEvent.keyDown(document.body, { key: 'Enter', metaKey: true })
-    expect(answer).toHaveBeenCalledTimes(1)
-  })
 
   it('dismisses the request so the composer returns for a plain message', () => {
     const { carrier, cancel, answer } = wait()

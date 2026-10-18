@@ -31,7 +31,6 @@ export const zh = {
   'action.next': '下一题',
   'plan.header': '计划待审',
   'plan.approve': '同意执行',
-  'plan.approve.kbd': 'Cmd/Ctrl+↵',
   'plan.decline': '拒绝',
   'plan.discuss': '要求修改',
 } satisfies Record<string, string>
@@ -70,7 +69,6 @@ export const en = {
   'action.next': 'Next',
   'plan.header': 'Plan review',
   'plan.approve': 'Approve',
-  'plan.approve.kbd': 'Cmd/Ctrl+Enter',
   'plan.decline': 'Refuse',
   'plan.discuss': 'Request changes',
 } satisfies Record<QuestionKey, string>

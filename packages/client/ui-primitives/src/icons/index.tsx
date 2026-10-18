@@ -130,22 +130,6 @@ export const IconPlusOutlineMedium = (props: IconProps) => (
   <IconPlusOutlineArtwork {...props} strokeWidth={ICON_MEDIUM_STROKE} />
 )
 
-const IconMinusOutlineArtwork = ({ size = 16, className, strokeWidth }: WeightedIconProps) => (
-  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" strokeWidth={strokeWidth}>
-    <path d="M2 8H14" stroke="currentColor" />
-  </svg>
-)
-
-/** Regular one-pixel IconMinusOutline artwork. */
-export const IconMinusOutlineRegular = (props: IconProps) => (
-  <IconMinusOutlineArtwork {...props} strokeWidth={ICON_REGULAR_STROKE} />
-)
-
-/** Medium IconMinusOutline artwork with a 1.3px stroke. */
-export const IconMinusOutlineMedium = (props: IconProps) => (
-  <IconMinusOutlineArtwork {...props} strokeWidth={ICON_MEDIUM_STROKE} />
-)
-
 const IconCheckOutlineArtwork = ({ size = 16, className, strokeWidth }: WeightedIconProps) => (
   <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" strokeWidth={strokeWidth}>
     <path d="M2.25 8.5L5.49732 11.7473C5.90519 12.1552 6.57263 12.1344 6.95426 11.7018L13.75 4" stroke="currentColor" />

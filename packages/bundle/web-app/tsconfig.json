@@ -27,9 +27,6 @@
       "path": "../../client/connection/tsconfig.host.json"
     },
     {
-      "path": "../../client/modules"
-    },
-    {
       "path": "../../host/frontend-static"
     },
     {
@@ -37,9 +34,6 @@
     },
     {
       "path": "../../util/launch-environment"
-    },
-    {
-      "path": "../../core/system-prompt"
     },
     {
       "path": "../../shell/shell-env"

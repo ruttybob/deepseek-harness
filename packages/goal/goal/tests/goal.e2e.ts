@@ -11,7 +11,7 @@ const configPath = fileURLToPath(new URL(
   './fixtures/domain/goal.patch.yml',
   import.meta.url,
 ))
-const repoTsconfig = fileURLToPath(new URL('../../../../tsconfig.runtime.json', import.meta.url))
+const repoTsconfig = fileURLToPath(new URL('../../../../tsconfig.json', import.meta.url))
 
 async function jsonlFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true })
@@ -48,6 +48,7 @@ describe('goal domain through the production headless profile and process', () =
     })
     expect(result['output']).toBeTypeOf('string')
     expect(result['output']).toContain('CLI tool round trip complete')
+    expect(events.filter(event => event.type === 'turn/start')).toHaveLength(1)
     expect(events.filter(event => event.type === 'turn/end')).toHaveLength(1)
 
     const changes = events.filter(event => event.type === 'goal/change')

@@ -29,13 +29,6 @@ export function codeToolbarLabels(t: T): CodeToolbarLabels {
 export function markdownLabels(t: T): MarkdownLabels {
   return {
     code: { copyLabel: t('copy'), copiedLabel: t('copied'), toolbarLabels: codeToolbarLabels(t) },
-    diagram: {
-      zoomIn: t('markdown.diagram.zoomIn'),
-      zoomOut: t('markdown.diagram.zoomOut'),
-      expand: t('expand'),
-      close: t('close'),
-      error: t('markdown.diagram.error'),
-    },
     footnotes: t('markdown.footnotes'),
   }
 }

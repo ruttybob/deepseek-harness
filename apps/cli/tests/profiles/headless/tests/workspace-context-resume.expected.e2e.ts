@@ -23,7 +23,7 @@ import {
   type SessionEvent,
   type SessionHeader,
 } from '@deepseek-ai/dsh-session'
-import JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import { logPath } from '../../../../../../packages/session/session-persistence-jsonl/src/format.ts'
 import { renderAgentInstructions } from '@deepseek-ai/dsh-agent-instructions'
 import { resolveConfig, workspaceBaselineIdentity } from '@deepseek-ai/dsh-agent-instructions/src/config.ts'
@@ -36,7 +36,7 @@ const sessionExpected = join(fixtureDir, 'session.expected.jsonl')
 const precedenceExpected = join(dirname(fixtureDir), 'precedence-change/session.expected.jsonl')
 const configPath = fileURLToPath(new URL('../workspace-context-resume-snapshot.patch.yml', import.meta.url))
 const binScript = fileURLToPath(new URL('../../../../../../packages/test-support/loader-smoke/tests/fixtures/headless-driver.ts', import.meta.url))
-const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.runtime.json', import.meta.url))
+const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url))
 const sessionId = SessionId('workspace-context-resume')
 const refreshing = process.env.DSH_SNAPSHOT === 'refresh'
 const oldInstruction = 'Old workspace instruction.'
@@ -79,7 +79,6 @@ async function seedVisibleBaseline(
     content: file.content,
   })), { maxBytes: 65536 })
   const config = resolveConfig({
-    dshHome: join(cwd, '.dsh'),
     maxBytes: 65536,
     ...options.instructionFileCandidates === undefined
       ? {}

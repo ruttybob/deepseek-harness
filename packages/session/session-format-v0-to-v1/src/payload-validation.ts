@@ -953,16 +953,7 @@ function modelRouteValue(value: SessionFormatJsonValue | undefined, label: strin
 }
 
 function subagentDescriptorValue(data: JsonRecord, label: string): void {
-  if (data['version'] !== 3) {
-    // Historical descriptor versions carry the same released member set, and
-    // the runtime descriptor reader ignores non-current versions, so released
-    // artifacts admit them losslessly. Only versions newer than the supported
-    // one refuse.
-    if (sessionFormatCount(data['version'], `${label} version`) > 3) {
-      literalValue(data['version'], [3], `${label} version`)
-    }
-    return
-  }
+  literalValue(data['version'], [3], `${label} version`)
   nonEmptyString(data['provider'], `${label} provider`)
   if (data['mode'] === 'one-shot') {
     assertReleasedV0Keys(data, ['mode', 'version', 'provider'], ['label'], `${label} data`)

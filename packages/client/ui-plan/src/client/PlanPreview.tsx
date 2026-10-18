@@ -23,13 +23,6 @@ export function PlanPreview({ useTabInfo, useResource, t }: PlanPreviewProps) {
   const plan = temporary ? (params !== undefined && 'planReview' in params ? params.planReview : undefined) : resource.value
   const labels = useMemo(() => ({
     code: { copyLabel: t('copy'), copiedLabel: t('copied'), toolbarLabels: { codeLabel: t('codeBlock.title'), wrapLabel: t('codeBlock.wrap'), unwrapLabel: t('codeBlock.unwrap') } },
-    diagram: {
-      zoomIn: t('markdown.diagram.zoomIn'),
-      zoomOut: t('markdown.diagram.zoomOut'),
-      expand: t('expand'),
-      close: t('close'),
-      error: t('markdown.diagram.error'),
-    },
     footnotes: t('markdown.footnotes'),
   }), [t])
   if (plan === undefined) return (

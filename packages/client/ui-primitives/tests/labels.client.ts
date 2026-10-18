@@ -10,9 +10,6 @@ import type {
 
 export const markdownLabels: MarkdownLabels = {
   code: { copyLabel: '复制', copiedLabel: '复制成功' },
-  diagram: {
-    zoomIn: '放大', zoomOut: '缩小', expand: '展开', close: '关闭', error: '图表无法显示',
-  },
   footnotes: 'Footnotes',
 }
 
@@ -45,6 +42,7 @@ export const searchBlockLabels: SearchBlockLabels = {
 }
 
 export const terminalBlockLabels: TerminalBlockLabels = {
+  commandLine: line => `命令第 ${line} 行`,
   signal: signal => `信号 ${signal}`,
   exitCode: code => `退出码 ${code}`,
   noExitCode: '未正常退出',

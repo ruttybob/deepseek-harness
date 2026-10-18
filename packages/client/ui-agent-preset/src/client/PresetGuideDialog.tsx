@@ -59,13 +59,6 @@ function GuideUsage({ text, t }: {
 }): ReactNode {
   const labels = {
     code: { copyLabel: t('guideCopy'), copiedLabel: t('guideCopied'), toolbarLabels: { codeLabel: t('codeBlock.title'), wrapLabel: t('codeBlock.wrap'), unwrapLabel: t('codeBlock.unwrap') } },
-    diagram: {
-      zoomIn: t('guideDiagramZoomIn'),
-      zoomOut: t('guideDiagramZoomOut'),
-      expand: t('guideDiagramExpand'),
-      close: t('guideDiagramClose'),
-      error: t('guideDiagramError'),
-    },
     footnotes: t('guideFootnotes'),
   }
   return text.split(/(?=^### )/m).map((section) => {
@@ -155,13 +148,6 @@ export function PresetGuideDialog({ guide, initialPage, t, onClose }: {
                   text={t(guide.explanation)}
                   labels={{
                     code: { copyLabel: t('guideCopy'), copiedLabel: t('guideCopied'), toolbarLabels: { codeLabel: t('codeBlock.title'), wrapLabel: t('codeBlock.wrap'), unwrapLabel: t('codeBlock.unwrap') } },
-                    diagram: {
-                      zoomIn: t('guideDiagramZoomIn'),
-                      zoomOut: t('guideDiagramZoomOut'),
-                      expand: t('guideDiagramExpand'),
-                      close: t('guideDiagramClose'),
-                      error: t('guideDiagramError'),
-                    },
                     footnotes: t('guideFootnotes'),
                   }}
                 />

@@ -4,6 +4,7 @@
  * @module @deepseek-ai/dsh-tool-skill
  */
 
+import type {} from '@deepseek-ai/dsh-working-directory'
 import { createHash } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
@@ -22,7 +23,7 @@ import {
 } from '@deepseek-ai/dsh-skill'
 
 export const name = 'tool-skill'
-export const inject = ['agents', 'tools', 'skills']
+export const inject = ['agents', 'tools', 'skills', 'workingDirectory']
 
 const DEFAULT_CATALOG_DESCRIPTION_MAX_LENGTH = 500
 /**
@@ -62,11 +63,11 @@ export interface Config {
   /** Maximum normalized description length rendered in the session catalog; minimum 3. */
   catalogDescriptionMaxLength?: number
   /**
-   * Fork (ruttybob): let the `skill` tool loader accept user-invocable skills the
-   * catalog does not advertise (`disable-model-invocation`), so sessions can load
-   * them by exact name instead of reading SKILL.md around the tool. The catalog
-   * itself stays filtered; only the loader gate widens. Skills disabled for both
-   * channels (`user-invocable: false`) remain unloadable.
+   * Let the `skill` tool loader accept user-invocable skills the catalog does not
+   * advertise (`disable-model-invocation`), loadable by exact name. The catalog
+   * itself stays filtered, so system-prompt cost is unchanged. Skills disabled for
+   * both channels (`user-invocable: false`) remain unloadable.
+   * @default true
    */
   allowUserInvocable?: boolean
 }
@@ -74,7 +75,7 @@ export interface Config {
 /** Validate and default the model-facing skill catalog configuration. */
 export const Config: z<Config> = z.object({
   catalogDescriptionMaxLength: z.number().default(DEFAULT_CATALOG_DESCRIPTION_MAX_LENGTH),
-  allowUserInvocable: z.boolean().default(false),
+  allowUserInvocable: z.boolean().default(true),
 })
 
 /**
@@ -86,7 +87,7 @@ export const Config: z<Config> = z.object({
 export function apply(ctx: Context, config: Config = {}): void {
   const catalogDescriptionMaxLength = config.catalogDescriptionMaxLength ?? DEFAULT_CATALOG_DESCRIPTION_MAX_LENGTH
   assertPositiveInteger('catalogDescriptionMaxLength', catalogDescriptionMaxLength, 3)
-  const allowUserInvocable = config.allowUserInvocable ?? false
+  const allowUserInvocable = config.allowUserInvocable ?? true
 
   const skillTool = defineTool({
     name: 'skill',
@@ -142,7 +143,8 @@ export function apply(ctx: Context, config: Config = {}): void {
       }
       // The agent is its own scope key, so the lookup resolves the layered
       // registry exactly as this agent's composition sees it.
-      const lookup = { cwd: exec.agent?.session.header.cwd, signal: exec.signal, scope: exec.agent }
+      const cwd = exec.agent === undefined ? undefined : await ctx.workingDirectory.ensure(exec.agent, exec.signal)
+      const lookup = { cwd, signal: exec.signal, scope: exec.agent }
       const summary = (await ctx.skills.list(lookup)).find(skill => skill.name === args.name)
       if (!summary) {
         throw new Error(`skill "${args.name}" is unknown or no longer available`)
@@ -195,7 +197,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     const names = invokedSkillNames(messages)
     if (names.length === 0) return decision
     signal.throwIfAborted()
-    const lookup = { cwd: agent.session.header.cwd, signal, scope: agent }
+    const lookup = { cwd: await ctx.workingDirectory.ensure(agent, signal), signal, scope: agent }
     const injections: UserMessage[] = []
     for (const name of names) {
       const skill = await ctx.skills.get(name, lookup)
@@ -231,7 +233,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     signal.throwIfAborted()
     const toolVisible = ctx.tools.get(skillTool.name, agent) === skillTool
     const snapshot = toolVisible
-      ? await ctx.skills.snapshot({ cwd: agent.session.header.cwd, signal, scope: agent })
+      ? await ctx.skills.snapshot({ cwd: await ctx.workingDirectory.ensure(agent, signal), signal, scope: agent })
       : { skills: [], complete: true }
     signal.throwIfAborted()
     if (!snapshot.complete) return decision
@@ -264,10 +266,10 @@ export function apply(ctx: Context, config: Config = {}): void {
 }
 
 /**
- * Fork (ruttybob): loader gate for the `skill` tool. Model-invocable skills always
- * load; with `allowUserInvocable`, user-invocable skills load too even though the
- * catalog never advertises them (`disable-model-invocation`). Skills disabled for
- * both channels stay unloadable.
+ * Loader gate for the `skill` tool. Model-invocable skills always load; with
+ * `allowUserInvocable`, user-invocable skills load too even though the catalog
+ * never advertises them (`disable-model-invocation`). Skills disabled for both
+ * channels stay unloadable.
  */
 function invocableViaTool(
   skill: Pick<SkillSummary, 'invocation'>,

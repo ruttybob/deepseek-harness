@@ -5,9 +5,7 @@ afterEach(() => {
   vi.resetModules()
 })
 
-// koffi is fully mocked, so the binding contract is pinned on every host; the
-// Linux lanes additionally exercise the real libc binding through the runner.
-describe('Linux libc execve binding', () => {
+describe.skipIf(process.platform !== 'linux')('Linux libc execve binding', () => {
   it.each([undefined, 'pipe'] as const)('preserves inherited stdio with control %s and reports execve errno', async (control) => {
     const nativeExecve = vi.fn(() => -1)
     const nativeFcntl = vi.fn((fd: number, command: number) => {
