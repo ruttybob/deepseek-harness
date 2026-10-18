@@ -906,7 +906,7 @@ describe('dsh-tool-skill', () => {
     const home = await tempDir('tool-errors')
     await writeSkill(join(home, '.dsh/skills'), 'hidden-skill', 'Hidden skill', 'Hidden instructions.')
     await writeFile(join(home, '.dsh/skills/hidden-skill/SKILL.md'), '---\nname: hidden-skill\ndescription: Hidden skill\ndisable-model-invocation: true\n---\n\nHidden instructions.\n')
-    const ctx = await setup(home)
+    const ctx = await setup(home, { allowUserInvocable: false })
     ctx.skills.register({
       name: 'model-only-skill',
       description: 'Model-only skill',
@@ -931,7 +931,7 @@ describe('dsh-tool-skill', () => {
 
   it('checks model policy before provider loading and rechecks the loaded definition', async () => {
     const home = await tempDir('tool-policy-before-load')
-    const ctx = await setup(home)
+    const ctx = await setup(home, { allowUserInvocable: false })
     const getCalls: string[] = []
     ctx.skills.registerProvider(() => ({
       name: 'policy-probe',
@@ -994,6 +994,71 @@ describe('dsh-tool-skill', () => {
     const vanishedBlock = vanished.content[0]
     if (vanishedBlock?.type !== 'text') throw new Error('expected text tool result')
     expect(vanishedBlock.text).toContain('skill "vanishing-skill" is unknown or no longer available')
+  })
+})
+
+describe('allowUserInvocable loader gate', () => {
+  async function writePolicySkillDir(root: string, name: string, policy: string, body: string): Promise<void> {
+    const dir = join(root, name)
+    await mkdir(dir, { recursive: true })
+    const policyLines = policy === '' ? '' : `${policy}\n`
+    await writeFile(join(dir, 'SKILL.md'), `---\nname: ${name}\ndescription: ${name} demo\n${policyLines}---\n\n${body}\n`)
+  }
+
+  async function gateHarness(config: toolSkill.Config): Promise<{ ctx: Context; agent: Agent }> {
+    const home = await tempDir('skill-gate')
+    const skillsRoot = join(home, '.dsh', 'skills')
+    await writePolicySkillDir(skillsRoot, 'hidden-skill', 'disable-model-invocation: true', 'Say the magic word: PINEAPPLE.')
+    await writePolicySkillDir(skillsRoot, 'sealed-skill', 'disable-model-invocation: true\nuser-invocable: false', 'Sealed instructions.')
+    const ctx = await setup(home, config)
+    return { ctx, agent: agentForCwd(home) }
+  }
+
+  it('loads a disable-model-invocation skill by default', async () => {
+    const { ctx, agent } = await gateHarness({})
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('g1'),
+      name: 'skill',
+      arguments: { name: 'hidden-skill' },
+      agent,
+    })
+    expect(result.isError).toBe(false)
+    const block = result.content[0]
+    if (block?.type !== 'text') throw new Error('expected text tool result')
+    expect(block.text).toContain('Say the magic word: PINEAPPLE.')
+  })
+
+  it('rejects the same skill with allowUserInvocable: false', async () => {
+    const { ctx, agent } = await gateHarness({ allowUserInvocable: false })
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('g2'),
+      name: 'skill',
+      arguments: { name: 'hidden-skill' },
+      agent,
+    })
+    expect(result.isError).toBe(true)
+    const block = result.content[0]
+    if (block?.type !== 'text') throw new Error('expected text tool result')
+    expect(block.text).toContain('is not available for model invocation')
+    expect(block.text).not.toContain('PINEAPPLE')
+  })
+
+  it('still rejects skills disabled for both channels', async () => {
+    const { ctx, agent } = await gateHarness({})
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('g3'),
+      name: 'skill',
+      arguments: { name: 'sealed-skill' },
+      agent,
+    })
+    expect(result.isError).toBe(true)
+    const block = result.content[0]
+    if (block?.type !== 'text') throw new Error('expected text tool result')
+    expect(block.text).toContain('is not available for model invocation')
+    expect(block.text).not.toContain('Sealed instructions.')
   })
 })
 

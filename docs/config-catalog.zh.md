@@ -4021,6 +4021,14 @@ export interface Config {
 export interface Config {
   /** Maximum normalized description length rendered in the session catalog; minimum 3. */
   catalogDescriptionMaxLength?: number
+  /**
+   * Let the `skill` tool loader accept user-invocable skills the catalog does not
+   * advertise (`disable-model-invocation`), loadable by exact name. The catalog
+   * itself stays filtered, so system-prompt cost is unchanged. Skills disabled for
+   * both channels (`user-invocable: false`) remain unloadable.
+   * @default true
+   */
+  allowUserInvocable?: boolean
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-tool-skill -->

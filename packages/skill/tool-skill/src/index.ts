@@ -62,11 +62,20 @@ function catalogSourceEntries(
 export interface Config {
   /** Maximum normalized description length rendered in the session catalog; minimum 3. */
   catalogDescriptionMaxLength?: number
+  /**
+   * Let the `skill` tool loader accept user-invocable skills the catalog does not
+   * advertise (`disable-model-invocation`), loadable by exact name. The catalog
+   * itself stays filtered, so system-prompt cost is unchanged. Skills disabled for
+   * both channels (`user-invocable: false`) remain unloadable.
+   * @default true
+   */
+  allowUserInvocable?: boolean
 }
 
 /** Validate and default the model-facing skill catalog configuration. */
 export const Config: z<Config> = z.object({
   catalogDescriptionMaxLength: z.number().default(DEFAULT_CATALOG_DESCRIPTION_MAX_LENGTH),
+  allowUserInvocable: z.boolean().default(true),
 })
 
 /**
@@ -78,10 +87,13 @@ export const Config: z<Config> = z.object({
 export function apply(ctx: Context, config: Config = {}): void {
   const catalogDescriptionMaxLength = config.catalogDescriptionMaxLength ?? DEFAULT_CATALOG_DESCRIPTION_MAX_LENGTH
   assertPositiveInteger('catalogDescriptionMaxLength', catalogDescriptionMaxLength, 3)
+  const allowUserInvocable = config.allowUserInvocable ?? true
 
   const skillTool = defineTool({
     name: 'skill',
-    description: 'Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog.',
+    description: allowUserInvocable
+      ? 'Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog, or the exact name of a skill this session\'s loaded material references.'
+      : 'Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog.',
     parameters: {
       name: { type: 'string', required: true, description: 'The exact skill name from the available skills list.' },
     },
@@ -137,14 +149,14 @@ export function apply(ctx: Context, config: Config = {}): void {
       if (!summary) {
         throw new Error(`skill "${args.name}" is unknown or no longer available`)
       }
-      if (!isModelInvocable(summary)) {
+      if (!invocableViaTool(summary, allowUserInvocable)) {
         throw new Error(`skill "${args.name}" is not available for model invocation`)
       }
       const skill = await ctx.skills.get(args.name, lookup)
       if (!skill) {
         throw new Error(`skill "${args.name}" is unknown or no longer available`)
       }
-      if (!isModelInvocable(skill)) {
+      if (!invocableViaTool(skill, allowUserInvocable)) {
         throw new Error(`skill "${args.name}" is not available for model invocation`)
       }
       return {
@@ -251,6 +263,19 @@ export function apply(ctx: Context, config: Config = {}): void {
         : decision.messages.map(message => message.id === existing.message.id ? catalog : message),
     }
   })
+}
+
+/**
+ * Loader gate for the `skill` tool. Model-invocable skills always load; with
+ * `allowUserInvocable`, user-invocable skills load too even though the catalog
+ * never advertises them (`disable-model-invocation`). Skills disabled for both
+ * channels stay unloadable.
+ */
+function invocableViaTool(
+  skill: Pick<SkillSummary, 'invocation'>,
+  allowUserInvocable: boolean,
+): boolean {
+  return isModelInvocable(skill) || (allowUserInvocable && isUserInvocable(skill))
 }
 
 function renderCatalogMessage(entries: SkillCatalogSource['entries']): UserMessage {

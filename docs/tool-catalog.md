@@ -1808,7 +1808,7 @@ A fixed foreground workflow starts one fresh structured child per round; the mod
 
 ### `skill`
 
-Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog.
+Load the full instructions for a skill. Call it before acting on a task that names or clearly matches a skill in the session skill catalog, or the exact name of a skill this session's loaded material references.
 
 ```json
 {
